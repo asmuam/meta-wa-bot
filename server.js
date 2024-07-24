@@ -12,22 +12,21 @@ import { signatureRequired } from "./security.js";
 import axios from 'axios';
 import express from 'express';
 import dotenv from 'dotenv';
+import rawBody from 'raw-body';
+
 
 // Memuat variabel lingkungan dari file .env
 dotenv.config();
-
 // Inisialisasi aplikasi Express
 const app = express();
 
-// Mengatur middleware untuk menangani permintaan JSON dan URL-encoded
+// Middleware to parse JSON payloads
 app.use(express.json());
+
+// Middleware to parse URL-encoded data
 app.use(express.urlencoded({ extended: true }));
-// Middleware to parse the raw body for signature verification
-app.use(express.json({
-  verify: (req, res, buf) => {
-    req.rawBody = buf.toString();
-  }
-}));
+
+
 // Mendapatkan variabel lingkungan yang diperlukan
 const { WEBHOOK_VERIFY_TOKEN, GRAPH_API_TOKEN, PORT } = process.env;
 
@@ -164,7 +163,7 @@ setInterval(checkSessionExpiration, 60000);
  *
  * @returns {void}
  */
-app.post("/webhook", signatureRequired, async (req, res) => {
+app.post("/webhook", async (req, res) => {
   const message = req.body.entry?.[0]?.changes[0]?.value?.messages?.[0];
   const statuses = req.body.entry?.[0]?.changes[0]?.value?.statuses?.[0];
   const businessPhoneNumberId = req.body.entry?.[0].changes?.[0]?.value?.metadata?.phone_number_id;
