@@ -8,6 +8,7 @@
 
 import { handleStatBoy, handleStatGen } from "./statsHandlers.js";
 import { handleGeminiResponse } from "./aiHandlers.js";
+import { signatureRequired } from "./security.js";
 import axios from 'axios';
 import express from 'express';
 import dotenv from 'dotenv';
@@ -21,18 +22,23 @@ const app = express();
 // Mengatur middleware untuk menangani permintaan JSON dan URL-encoded
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
+// Middleware to parse the raw body for signature verification
+app.use(express.json({
+  verify: (req, res, buf) => {
+    req.rawBody = buf.toString();
+  }
+}));
 // Mendapatkan variabel lingkungan yang diperlukan
 const { WEBHOOK_VERIFY_TOKEN, GRAPH_API_TOKEN, PORT } = process.env;
 
 // Pesan sambutan yang akan dikirim saat pengguna mengakses bot
-const homeMessage = `Selamat Datang di BPS Boyolali Bot\n\nKetik 1 untuk bertanya statistik Boyolali\nKetik 2 untuk bertanya statistik secara umum\nKetik 3 untuk bertanya AI\n\n📷 Instagram : https://www.instagram.com/bpskabboyolali/\n🎥 YouTube : https://www.youtube.com/@BPSKabupatenBoyolali`;
+const homeMessage = `Selamat Datang di BPS Boyolali Bot\n\nKetik 1 untuk bertanya statistik Boyolali\nKetik 2 untuk bertanya statistik secara umum\nKetik 3 untuk bertanya AI\nKetik 4 untuk bertanya dengan CS\n\n📷 Instagram : https://www.instagram.com/bpskabboyolali/\n🎥 YouTube : https://www.youtube.com/@BPSKabupatenBoyolali`;
 
 // Objek untuk melacak status sesi pengguna
 const sessionStatus = {};
 
 // Daftar opsi yang valid yang dapat dipilih pengguna
-const validOptions = ["1", "2", "3"];
+const validOptions = ["1", "2", "3", "4"];
 let serverOnlineTime = 0;
 
 
@@ -102,7 +108,7 @@ async function sendWhatsAppMessage(phone_number_id, recipient, text, context_mes
 async function handleSessionExpiration(business_phone_number_id, recipient) {
   delete sessionStatus[recipient];
   const sessionExpiredMessage = "Sesi Anda telah berakhir. Silahkan kirim pesan lagi untuk memulai sesi baru.";
-  console.log(business_phone_number_id," ",recipient);
+  console.log("SESSION EXPIRED :", business_phone_number_id, " ", recipient);
   await sendWhatsAppMessage(business_phone_number_id, recipient, sessionExpiredMessage);
 }
 
@@ -158,73 +164,84 @@ setInterval(checkSessionExpiration, 60000);
  *
  * @returns {void}
  */
-app.post("/webhook", async (req, res) => {
+app.post("/webhook", signatureRequired, async (req, res) => {
   const message = req.body.entry?.[0]?.changes[0]?.value?.messages?.[0];
+  const statuses = req.body.entry?.[0]?.changes[0]?.value?.statuses?.[0];
   const businessPhoneNumberId = req.body.entry?.[0].changes?.[0]?.value?.metadata?.phone_number_id;
   const messageTimestamp = message?.timestamp;
+  const userId = message?.from || statuses?.recipient_id;
+
+
   console.log("messageTimestamp : ", messageTimestamp);
   console.log("serverOnlineTime : ", serverOnlineTime);
+  console.log("MESSAGE : ", message);
+  console.log("USERDID : ", userId);
   console.log("Incoming webhook message:", JSON.stringify(req.body, null, 2));
 
   if (message?.type === "text") {
-    const userId = message.from;
     const userMessage = message.text.body.trim().toLowerCase();
-      if (messageTimestamp < serverOnlineTime) {
-          const offlineMessage = 'Bot telah kembali!';
-          await sendWhatsAppMessage(businessPhoneNumberId, userId, offlineMessage);
-          await sendWhatsAppMessage(businessPhoneNumberId, userId, homeMessage);
-          sessionStatus[userId] = { lastActive: Date.now(), option: null,businessPhoneNumberId:businessPhoneNumberId };
-      }
-      else if (userMessage === "0" || !(userId in sessionStatus)) {
-          // Pengguna baru atau meminta kembali ke menu awal
-          sessionStatus[userId] = { lastActive: Date.now(), option: null,businessPhoneNumberId:businessPhoneNumberId };
-          await sendWhatsAppMessage(businessPhoneNumberId, userId, homeMessage);
-      } else {
-          const { option } = sessionStatus[userId];
-          let responseText = "";
-          if (option === null) {
-              // Menetapkan opsi berdasarkan input pengguna
-              if (validOptions.includes(userMessage)) {
-                  sessionStatus[userId].option = userMessage;
-                  switch (userMessage) {
-                      case "1":
-                          responseText = "Kirim Pertanyaan Seputar Statistik Boyolali:\n\nKetik 0 untuk kembali ke menu awal.";
-                          break;
-                      case "2":
-                          responseText = "Kirim Pertanyaan Seputar Statistik Secara Umum:\n\nKetik 0 untuk kembali ke menu awal.";
-                          break;
-                      case "3":
-                          responseText = "Kirim Pertanyaan Untuk AI:\n\nKetik 0 untuk kembali ke menu awal.";
-                          break;
-                  }
-              } else {
-                  responseText = "Mohon Maaf. Silahkan Pilih Opsi Berikut Untuk Melanjutkan.\n\nKetik 1 untuk bertanya statistik Boyolali\nKetik 2 untuk bertanya statistik secara umum\nKetik 3 untuk bertanya AI.\n\nJika masih ada pertanyaan silahkan kirim email ke: bps3309@bps.go.id atau kunjungi https://boyolalikab.bps.go.id/\n\n📷 [Instagram](https://www.instagram.com/bpskabboyolali/)\n🎥 [YouTube](https://www.youtube.com/@BPSKabupatenBoyolali)";
-              }
-          } else if (validOptions.includes(option)) {
-              // Menangani opsi yang valid
-              switch (option) {
-                  case "1":
-                      responseText = await handleStatBoy(userMessage);
-                      break;
-                  case "2":
-                      responseText = await handleStatGen(userMessage);
-                      break;
-                  case "3":
-                      responseText = await handleGeminiResponse(userMessage);
-                      break;
-              }
-          } else {
-              responseText = "Mohon Maaf. Silahkan Pilih Opsi Berikut Untuk Melanjutkan.\n\nKetik 1 untuk bertanya statistik Boyolali\nKetik 2 untuk bertanya statistik secara umum\nKetik 3 untuk bertanya AI.\n\nJika masih ada pertanyaan silahkan kirim email ke: bps3309@bps.go.id atau kunjungi https://boyolalikab.bps.go.id/\n\n📷 [Instagram](https://www.instagram.com/bpskabboyolali/)\n🎥 [YouTube](https://www.youtube.com/@BPSKabupatenBoyolali)";
-              sessionStatus[userId].option = null; // Reset session jika opsi tidak valid
+    if (messageTimestamp < serverOnlineTime) {
+      const offlineMessage = 'Bot telah kembali!';
+      await sendWhatsAppMessage(businessPhoneNumberId, userId, offlineMessage);
+      await sendWhatsAppMessage(businessPhoneNumberId, userId, homeMessage);
+      sessionStatus[userId] = { lastActive: Date.now(), option: null, businessPhoneNumberId: businessPhoneNumberId };
+    }
+    else if (userMessage === "0" || !(userId in sessionStatus)) {
+      // Pengguna baru atau meminta kembali ke menu awal
+      sessionStatus[userId] = { lastActive: Date.now(), option: null, businessPhoneNumberId: businessPhoneNumberId };
+      await sendWhatsAppMessage(businessPhoneNumberId, userId, homeMessage);
+    } else {
+      const { option } = sessionStatus[userId];
+      let responseText = "";
+      if (option === null) {
+        // Menetapkan opsi berdasarkan input pengguna
+        if (validOptions.includes(userMessage)) {
+          sessionStatus[userId].option = userMessage;
+          switch (userMessage) {
+            case "1":
+              responseText = "Kirim Pertanyaan Seputar Statistik Boyolali:\n\nKetik 0 untuk kembali ke menu awal.";
+              break;
+            case "2":
+              responseText = "Kirim Pertanyaan Seputar Statistik Secara Umum:\n\nKetik 0 untuk kembali ke menu awal.";
+              break;
+            case "3":
+              responseText = "Kirim Pertanyaan Untuk AI:\n\nKetik 0 untuk kembali ke menu awal.";
+              break;
+            case "4":
+              responseText = "Tunggu Beberapa Saat, Kami Sedang Menghubungi Pegawai Yang Bertugas\n\nKetik 0 untuk kembali ke menu awal.";
+              break;
           }
-
-          await sendWhatsAppMessage(businessPhoneNumberId, userId, responseText);
+        } else {
+          responseText = "Mohon Maaf. Silahkan Pilih Opsi Berikut Untuk Melanjutkan.\n\nKetik 1 untuk bertanya statistik Boyolali\nKetik 2 untuk bertanya statistik secara umum\nKetik 3 untuk bertanya AI.\n\nJika masih ada pertanyaan silahkan kirim email ke: bps3309@bps.go.id atau kunjungi https://boyolalikab.bps.go.id/\n\n📷 [Instagram](https://www.instagram.com/bpskabboyolali/)\n🎥 [YouTube](https://www.youtube.com/@BPSKabupatenBoyolali)";
+        }
+      } else if (validOptions.includes(option)) {
+        // Menangani opsi yang valid
+        switch (option) {
+          case "1":
+            responseText = await handleStatBoy(userMessage);
+            break;
+          case "2":
+            responseText = await handleStatGen(userMessage);
+            break;
+          case "3":
+            responseText = await handleGeminiResponse(userMessage);
+            break;
+          case "4":
+            responseText = await handlePSTResponse(userMessage);
+            break;
+        }
+      } else {
+        responseText = "Mohon Maaf. Silahkan Pilih Opsi Berikut Untuk Melanjutkan.\n\nKetik 1 untuk bertanya statistik Boyolali\nKetik 2 untuk bertanya statistik secara umum\nKetik 3 untuk bertanya AI.\n\nJika masih ada pertanyaan silahkan kirim email ke: bps3309@bps.go.id atau kunjungi https://boyolalikab.bps.go.id/\n\n📷 [Instagram](https://www.instagram.com/bpskabboyolali/)\n🎥 [YouTube](https://www.youtube.com/@BPSKabupatenBoyolali)";
+        sessionStatus[userId].option = null; // Reset session jika opsi tidak valid
       }
+
+      await sendWhatsAppMessage(businessPhoneNumberId, userId, responseText);
+    }
   }
-  else if (message) {
-    const userId = message.from;
-    const responseText = "Mohon Maaf. Kami Hanya Mendukung percakapan berbasis teks.\n\nKetik 1 untuk bertanya statistik Boyolali\nKetik 2 untuk bertanya statistik secara umum\nKetik 3 untuk bertanya AI.\n\nJika masih ada pertanyaan silahkan kirim email ke: bps3309@bps.go.id atau kunjungi https://boyolalikab.bps.go.id/\n\n📷 [Instagram](https://www.instagram.com/bpskabboyolali/)\n🎥 [YouTube](https://www.youtube.com/@BPSKabupatenBoyolali)";
-    sessionStatus[userId] = { lastActive: Date.now(), option: null,businessPhoneNumberId: businessPhoneNumberId };
+  else if ((message?.type)) {
+    console.log("TIPE PESAN : ", message.type);
+    const responseText = "Mohon Maaf. Kami Hanya Mendukung percakapan berbasis teks.\n\nKetik 1 untuk bertanya statistik Boyolali\nKetik 2 untuk bertanya statistik secara umum\nKetik 3 untuk bertanya AI.\n\nJika masih ada pertanyaan silahkan kirim email ke: bps3309@bps.go.id atau kunjungi https://boyolalikab.bps.go.id/\n\n📷 Instagram : https://www.instagram.com/bpskabboyolali/\n🎥 YouTube : https://www.youtube.com/@BPSKabupatenBoyolali";
+    sessionStatus[userId] = { lastActive: Date.now(), option: null, businessPhoneNumberId: businessPhoneNumberId };
     await sendWhatsAppMessage(businessPhoneNumberId, userId, responseText);
   }
   res.sendStatus(200);
