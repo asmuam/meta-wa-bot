@@ -33,6 +33,7 @@ const sessionStatus = {};
 
 // Daftar opsi yang valid yang dapat dipilih pengguna
 const validOptions = ["1", "2", "3"];
+let serverOnlineTime = 0;
 
 
 /**
@@ -71,11 +72,15 @@ async function sendWhatsAppMessage(phone_number_id, recipient, text, context_mes
 
   try {
     const response = await axios.post(url, data, { headers });
-    console.log("Message sent successfully:", response.data);
+    console.log("Message sent successfully:");
   } catch (error) {
-    console.error("Error sending message:", error.response.data);
+    console.error("Error sending message:");
+    console.error(`Recipient: ${recipient}`);
+    console.error(`Message: ${text}`);
+    console.error("Error details:", error.response.data);
   }
 }
+
 
 
 /**
@@ -97,6 +102,7 @@ async function sendWhatsAppMessage(phone_number_id, recipient, text, context_mes
 async function handleSessionExpiration(business_phone_number_id, recipient) {
   delete sessionStatus[recipient];
   const sessionExpiredMessage = "Sesi Anda telah berakhir. Silahkan kirim pesan lagi untuk memulai sesi baru.";
+  console.log(business_phone_number_id," ",recipient);
   await sendWhatsAppMessage(business_phone_number_id, recipient, sessionExpiredMessage);
 }
 
@@ -118,7 +124,7 @@ async function handleSessionExpiration(business_phone_number_id, recipient) {
 function checkSessionExpiration() {
   const currentTime = Date.now();
   for (const recipient in sessionStatus) {
-    if ((currentTime - sessionStatus[recipient].lastActive) > 180000) {
+    if ((currentTime - sessionStatus[recipient].lastActive) > 100000) {
       handleSessionExpiration(sessionStatus[recipient].businessPhoneNumberId, recipient);
     }
   }
@@ -153,22 +159,29 @@ setInterval(checkSessionExpiration, 60000);
  * @returns {void}
  */
 app.post("/webhook", async (req, res) => {
-  console.log("Incoming webhook message:", JSON.stringify(req.body, null, 2));
   const message = req.body.entry?.[0]?.changes[0]?.value?.messages?.[0];
+  const businessPhoneNumberId = req.body.entry?.[0].changes?.[0]?.value?.metadata?.phone_number_id;
+  const messageTimestamp = message?.timestamp;
+  console.log("messageTimestamp : ", messageTimestamp);
+  console.log("serverOnlineTime : ", serverOnlineTime);
+  console.log("Incoming webhook message:", JSON.stringify(req.body, null, 2));
 
   if (message?.type === "text") {
-      const businessPhoneNumberId = req.body.entry?.[0].changes?.[0]?.value?.metadata?.phone_number_id;
-      const userMessage = message.text.body.trim().toLowerCase();
-      const userId = message.from;
-
-      if (userMessage === "0" || !(userId in sessionStatus)) {
+    const userId = message.from;
+    const userMessage = message.text.body.trim().toLowerCase();
+      if (messageTimestamp < serverOnlineTime) {
+          const offlineMessage = 'Bot telah kembali!';
+          await sendWhatsAppMessage(businessPhoneNumberId, userId, offlineMessage);
+          await sendWhatsAppMessage(businessPhoneNumberId, userId, homeMessage);
+          sessionStatus[userId] = { lastActive: Date.now(), option: null,businessPhoneNumberId:businessPhoneNumberId };
+      }
+      else if (userMessage === "0" || !(userId in sessionStatus)) {
           // Pengguna baru atau meminta kembali ke menu awal
-          sessionStatus[userId] = { lastActive: Date.now(), option: null };
+          sessionStatus[userId] = { lastActive: Date.now(), option: null,businessPhoneNumberId:businessPhoneNumberId };
           await sendWhatsAppMessage(businessPhoneNumberId, userId, homeMessage);
       } else {
           const { option } = sessionStatus[userId];
           let responseText = "";
-
           if (option === null) {
               // Menetapkan opsi berdasarkan input pengguna
               if (validOptions.includes(userMessage)) {
@@ -207,6 +220,12 @@ app.post("/webhook", async (req, res) => {
 
           await sendWhatsAppMessage(businessPhoneNumberId, userId, responseText);
       }
+  }
+  else if (message) {
+    const userId = message.from;
+    const responseText = "Mohon Maaf. Kami Hanya Mendukung percakapan berbasis teks.\n\nKetik 1 untuk bertanya statistik Boyolali\nKetik 2 untuk bertanya statistik secara umum\nKetik 3 untuk bertanya AI.\n\nJika masih ada pertanyaan silahkan kirim email ke: bps3309@bps.go.id atau kunjungi https://boyolalikab.bps.go.id/\n\n📷 [Instagram](https://www.instagram.com/bpskabboyolali/)\n🎥 [YouTube](https://www.youtube.com/@BPSKabupatenBoyolali)";
+    sessionStatus[userId] = { lastActive: Date.now(), option: null,businessPhoneNumberId: businessPhoneNumberId };
+    await sendWhatsAppMessage(businessPhoneNumberId, userId, responseText);
   }
   res.sendStatus(200);
 });
@@ -250,6 +269,10 @@ app.get('/webhook', (req, res) => {
 });
 
 app.listen(PORT, () => {
+  const date = new Date(); // Current date and time
+  const unixTimestampInSeconds = Math.floor(date.getTime() / 1000);
+  serverOnlineTime = unixTimestampInSeconds;
+  console.log(`Server Online Time: ${serverOnlineTime}`);
   console.log(`Server is listening on port: ${PORT}`);
   console.log(`WEBHOOK_VERIFY_TOKEN: ${WEBHOOK_VERIFY_TOKEN}`);
 });
