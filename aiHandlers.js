@@ -38,7 +38,7 @@ export async function handleGeminiResponse(userPrompt) {
   try {
     const result = await model.generateContent(userPrompt);
     geminiResponse = result.response.text();
-    return `${geminiResponse}\n\nDisclaimer: Jawaban ini dihasilkan oleh AI Gemini.`;
+    return `${geminiResponse}\n*Disclaimer*: Jawaban ini dihasilkan oleh AI Gemini.\n\nKetik *0* untuk kembali ke menu awal.`;
   } catch (error) {
     console.error("Error generating Gemini response:", error);
     return "Maaf, terjadi kesalahan saat memproses permintaan Anda.";
