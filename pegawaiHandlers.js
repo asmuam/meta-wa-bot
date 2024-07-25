@@ -2,11 +2,11 @@
 import dotenv from 'dotenv';
 import axios from 'axios';
 import { backToMenu } from "./const.js";
+dotenv.config();
 
-const API_URL = 'https://graph.facebook.com/v20.0/106540352242922/messages';
-const ACCESS_TOKEN = process.env.GRAPH_API_TOKEN;
-
-async function sendMessageToPegawai(pegawaiNumber, userPrompt) {
+async function sendMessageToPegawai(businessPhoneNumberId, pegawaiNumber, userPrompt) {
+  const API_URL = `https://graph.facebook.com/v20.0/${businessPhoneNumberId}/messages`;
+  const ACCESS_TOKEN = process.env.GRAPH_API_TOKEN;
   const messagePayload = {
     messaging_product: 'whatsapp',
     recipient_type: 'individual',
@@ -28,13 +28,6 @@ async function sendMessageToPegawai(pegawaiNumber, userPrompt) {
               id: 'tanggapi-button',
               title: 'Tanggapi'
             }
-          },
-          {
-            type: 'reply',
-            reply: {
-              id: 'abaikan-button',
-              title: 'Abaikan'
-            }
           }
         ]
       }
@@ -55,21 +48,24 @@ async function sendMessageToPegawai(pegawaiNumber, userPrompt) {
   }
 }
 
-export async function pegawaiConnect(availablePegawai, sessionStatus, userPhoneNumber) {
-  // Misalnya, pilih pegawai pertama dari availablePegawai
-  const pegawai = availablePegawai[0]; // Ini adalah objek pegawai pertama dari array
-
-  if (!availablePegawai) {
-    return { responsePegawai: "Tidak ada pegawai yang tersedia", pegawaiPhoneNumber: null };
+export async function pegawaiBroadcast(businessPhoneNumberId, availablePegawai, userMessage) {
+  // kirim broadcast ke semua pegawai
+  for (const number of availablePegawai) {
+    try {
+      // Misalkan menggunakan API untuk mengirim pesan
+      await sendMessageToPegawai(businessPhoneNumberId, number, userMessage)
+      console.log(`Pesan terkirim ke ${number}`);
+    } catch (error) {
+      console.error(`Gagal mengirim pesan ke ${number}:`, error);
+    }
   }
-
-  // Mengembalikan respons yang menyertakan nama dan nomor pegawai
-  return {
-    responsePegawai: `Anda Telah Terhubung Dengan Admin ${pegawai.name}` + backToMenu, // Template literal
-    pegawaiPhoneNumber: pegawai.number
-  };
+  return 
 }
 
 export function handlePSTResponse(){
+
+}
+
+export function pegawaiConnect(){
 
 }
