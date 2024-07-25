@@ -9,11 +9,11 @@
 import { handleStatBoy, handleStatGen } from "./statsHandlers.js";
 import { handleGeminiResponse } from "./aiHandlers.js";
 import { signatureRequired } from "./security.js";
+import { handlePSTResponse, pegawaiConnect } from "./pegawaiHandlers.js"
 import { unsupportedType, homeMessage, backOnline, wrongCommand, optionOne, backToMenu, optionTwo, optionThree, optionfour } from "./const.js";
 import axios from 'axios';
 import express from 'express';
 import dotenv from 'dotenv';
-import rawBody from 'raw-body';
 
 
 // Memuat variabel lingkungan dari file .env
@@ -32,13 +32,25 @@ app.use(express.urlencoded({ extended: true }));
 const { WEBHOOK_VERIFY_TOKEN, GRAPH_API_TOKEN, PORT } = process.env;
 
 // Objek untuk melacak status sesi pengguna
+/**
+ * userPhoneNumber:userPhoneNumber, lastActive: Date, optionSession: null, businessPhoneNumberId: required, pegawaiPhoneNumber: null
+ */
 const sessionStatus = {};
+
+// daftar nomor pegawai
+const PEGAWAI_NUMBER_JSON = process.env.PEGAWAI_NUMBER;
+const PEGAWAI_NUMBERS = JSON.parse(PEGAWAI_NUMBER_JSON);
+
+// Inisialisasi array availablePegawai dengan nomor pegawai
+let availablePegawai = PEGAWAI_NUMBERS.map(pegawai => pegawai.number);
 
 // Daftar opsi yang valid yang dapat dipilih pengguna
 const validOptions = ["0", "1", "2", "3", "4"];
 let serverOnlineTime = 0;
+
 // Simpan status pengguna yang sudah menerima balasan
-// Ini untuk mengakali jika whatsapp mengirim webhook dari pesan lama yg dikirim user sebelum server aktif
+// Ini untuk mengakali jika whatsapp mengirim webhook dari pesan2 lama yg dikirim user sebelum server aktif
+// sebenarnya ada di dokumentasi tetapi untuk kemudahan dilakukan cara ini
 let repliedUsers = {};
 
 /**
@@ -86,6 +98,30 @@ async function sendWhatsAppMessage(phone_number_id, recipient, text, context_mes
   }
 }
 
+
+async function markMessageAsSeen(business_phone_number_id, message_id) {
+  const url = `https://graph.facebook.com/v20.0/${business_phone_number_id}/messages`;
+  const headers = {
+    Authorization: `Bearer ${GRAPH_API_TOKEN}`,
+    "Content-Type": "application/json",
+  };
+  const data = {
+    messaging_product: "whatsapp",
+    status: "read",
+    message_id: message_id,
+  };
+
+  try {
+    await axios.post(url, data, { headers });
+    console.log("Message marked as seen:");
+  } catch (error) {
+    console.error("Error marking message as seen:", error.response.data);
+  }
+}
+
+// TODO typing indicator
+async function showTypingIndicator() {
+}
 
 
 /**
@@ -163,7 +199,7 @@ setInterval(checkSessionExpiration, 60000);
  *
  * @returns {void}
  */
-app.post("/webhook", async (req, res) => {
+app.post("/webhook", signatureRequired, async (req, res) => {
   // Mengambil entri pertama dari body permintaan
   const entry = req.body.entry?.[0];
   if (!entry) {
@@ -187,18 +223,25 @@ app.post("/webhook", async (req, res) => {
   const statusTimestamp = statuses?.timestamp; // Mengambil timestamp status
   const userPhoneNumber = messages?.from || statuses?.recipient_id; // Mengambil nomor telepon pengguna dari pesan atau status
 
+  // menangani pesan yang dikirim user dan pegawai agar saling berinteraksi
+  // if (sessionStatus[userPhoneNumber].pegawaiPhoneNumber){
+
+  // }
+
   // Menangani pesan teks yang diterima
   if (messages && messages.timestamp) {
     console.log("--- Received Text Message ---");
     console.log(JSON.stringify(req.body, null, 2));
     console.log("------------------------------");
-
+    await markMessageAsSeen(businessPhoneNumberId, messages.id);
+    // await showTypingIndicator());
+    
     // Handle message logic here, e.g., reply to the message
   } else if (statuses && statuses.timestamp) {
     // Menangani pembaruan status yang diterima
-    // console.log("--- Received Status Update ---");
+    console.log("--- Received Status Update ---");
     // console.log(JSON.stringify(req.body, null, 2));
-    // console.log("------------------------------");
+    console.log("------------------------------");
 
     // Handle status update logic here, if needed
   } else {
@@ -210,11 +253,12 @@ app.post("/webhook", async (req, res) => {
     // Handle unknown webhook logic here, if needed
   }
 
+
   // Handle unsupported message types
   if (messages?.type && messages.type !== "text") {
     // Mengirim pesan balasan untuk jenis pesan yang tidak didukung
     await sendWhatsAppMessage(businessPhoneNumberId, userPhoneNumber, unsupportedType);
-    sessionStatus[userPhoneNumber] = { lastActive: Date.now(), option: null};
+    sessionStatus[userPhoneNumber] = { lastActive: Date.now(), optionSession: null };
     res.sendStatus(200);
     return;
   }
@@ -224,7 +268,7 @@ app.post("/webhook", async (req, res) => {
     // Mengirim pesan balasan dari pesan yang dikirim ketika server offline
     await sendWhatsAppMessage(businessPhoneNumberId, userPhoneNumber, backOnline, messages?.id);
     await sendWhatsAppMessage(businessPhoneNumberId, userPhoneNumber, homeMessage);
-    sessionStatus[userPhoneNumber] = { lastActive: Date.now(), option: null, businessPhoneNumberId: businessPhoneNumberId };
+    sessionStatus[userPhoneNumber] = {userPhoneNumber:userPhoneNumber, lastActive: Date.now(), optionSession: null, businessPhoneNumberId: businessPhoneNumberId, };
     // Tandai pengguna sudah menerima balasan
     repliedUsers[userPhoneNumber] = true;
     res.sendStatus(200);
@@ -233,7 +277,7 @@ app.post("/webhook", async (req, res) => {
   // Handle First Message
   if ((messageTimestamp > serverOnlineTime) && !(userPhoneNumber in sessionStatus)) {
     // Mengirim pesan balasan untuk pesan pertama setelah server online
-    sessionStatus[userPhoneNumber] = { lastActive: Date.now(), option: null, businessPhoneNumberId: businessPhoneNumberId };
+    sessionStatus[userPhoneNumber] = {userPhoneNumber:userPhoneNumber, lastActive: Date.now(), optionSession: null, businessPhoneNumberId: businessPhoneNumberId };
     await sendWhatsAppMessage(businessPhoneNumberId, userPhoneNumber, homeMessage);
     res.sendStatus(200);
     return;
@@ -243,30 +287,30 @@ app.post("/webhook", async (req, res) => {
   if ((messageTimestamp > serverOnlineTime) && messages && (userPhoneNumber in sessionStatus)) {
     let responseText = "";
     if (messages.text) {
-      const { option } = sessionStatus[userPhoneNumber];
+      const { optionSession } = sessionStatus[userPhoneNumber];
       const userMessage = messages.text.body.trim().toLowerCase();
       const isValidOption = validOptions.includes(userMessage);
 
       // Log informasi penting untuk debug atau analisis
       console.log("----------------------------------");
-      console.log("option = ", option);
+      console.log("optionSession = ", optionSession);
       console.log("isValidOption = ", isValidOption);
       console.log("userMessage = ", userMessage);
       console.log("businessPhoneNumberId = ", businessPhoneNumberId);
       console.log("userPhoneNumber = ", userPhoneNumber);
       console.log("----------------------------------");
 
-      if (option) {
+      if (optionSession) {
         // Handle jika ada opsi yang sedang dipilih pengguna
         if (userMessage === "0") {
           // Handle jika pengguna memilih untuk kembali ke menu utama
-          sessionStatus[userPhoneNumber] = { lastActive: Date.now(), option: null, businessPhoneNumberId: businessPhoneNumberId };
+          sessionStatus[userPhoneNumber] = { lastActive: Date.now(), optionSession: null, businessPhoneNumberId: businessPhoneNumberId };
           await sendWhatsAppMessage(businessPhoneNumberId, userPhoneNumber, homeMessage);
           res.sendStatus(200);
           return;
         }
         // Switch case untuk menangani setiap opsi yang dipilih pengguna
-        switch (option) {
+        switch (optionSession) {
           case "1":
             responseText = await handleStatBoy(userMessage);
             break;
@@ -277,13 +321,14 @@ app.post("/webhook", async (req, res) => {
             responseText = await handleGeminiResponse(userMessage);
             break;
           case "4":
-            responseText = await handlePSTResponse(userMessage);
+            // responsePegawai = await handlePSTResponse(availablePegawai, sessionStatus, userMessage);
+            responseText = "dummy"
             break;
         }
       }
       else if (isValidOption) {
         // Handle jika pesan yang diterima merupakan opsi yang valid
-        sessionStatus[userPhoneNumber].option = userMessage;
+        sessionStatus[userPhoneNumber].optionSession = userMessage;
         switch (userMessage) {
           case "0":
             responseText = homeMessage;
@@ -299,6 +344,11 @@ app.post("/webhook", async (req, res) => {
             break;
           case "4":
             responseText = optionfour + backToMenu;
+            const { responsePegawai, pegawaiPhoneNumber } = await pegawaiConnect(availablePegawai, sessionStatus, userMessage);
+            responseText = responsePegawai;
+            sessionStatus[userPhoneNumber] = { lastActive: Date.now(), pegawaiPhoneNumber: pegawaiPhoneNumber};
+            availablePegawai = availablePegawai.filter(number => number !== pegawaiPhoneNumber);
+            console.log("available pegawai ", availablePegawai);
             break;
         }
       } else {
@@ -319,6 +369,7 @@ app.post("/webhook", async (req, res) => {
   console.log(`Server Online Time: ${new Date(serverOnlineTime * 1000).toLocaleString()}`);
   console.log(messageTimestamp ? `Message timestamp: ${new Date(messageTimestamp * 1000).toLocaleString()}` : 'Message timestamp not available.');
   console.log(statusTimestamp ? `Status timestamp: ${new Date(statusTimestamp * 1000).toLocaleString()}` : 'Status timestamp not available.');
+  console.log("SESSION = ", sessionStatus );
   console.log("---------------------------------------------------------------------------------------");
 
 });
