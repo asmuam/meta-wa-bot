@@ -9,9 +9,9 @@
 import { handleStatBoy, handleStatGen } from "./statsHandlers.js";
 import { handleGeminiResponse } from "./aiHandlers.js";
 import { signatureRequired } from "./security.js";
-import { isPegawaiPhoneNumberInSession } from "./func.js";
-import { handlePSTResponse, pegawaiConnect, pegawaiBroadcast } from "./pegawaiHandlers.js"
-import { unsupportedType, homeMessage, backOnline, wrongCommand, optionOne, backToMenu, optionTwo, optionThree, optionfour, app, validOptions, WEBHOOK_VERIFY_TOKEN, GRAPH_API_TOKEN, PORT, sessionStatus, PEGAWAI_NUMBERS } from "./const.js";
+import { getStaffNameByNumber, getUserPhoneNumberInSession, isPegawaiPhoneNumberInSession } from "./func.js";
+import { handlePSTResponse, pegawaiBroadcast, sendMessageToPegawai } from "./pegawaiHandlers.js"
+import { unsupportedType, homeMessage, backOnline, wrongCommand, optionOne, backToMenu, optionTwo, optionThree, optionfour, app, validOptions, WEBHOOK_VERIFY_TOKEN, GRAPH_API_TOKEN, PORT, sessionStatus, PEGAWAI_NUMBERS, connectedWithPegawai, SESSION_LIMIT } from "./const.js";
 import axios from 'axios';
 import express from 'express';
 import dotenv from 'dotenv';
@@ -147,7 +147,7 @@ async function handleSessionExpiration(business_phone_number_id, recipient) {
 function checkSessionExpiration() {
   const currentTime = Date.now();
   for (const recipient in sessionStatus) {
-    if ((currentTime - sessionStatus[recipient].lastActive) > 100000) {
+    if ((currentTime - sessionStatus[recipient].lastActive) > SESSION_LIMIT) {
       handleSessionExpiration(sessionStatus[recipient].businessPhoneNumberId, recipient);
     }
   }
@@ -196,41 +196,39 @@ app.post("/webhook", signatureRequired, async (req, res) => {
     return;
   }
 
-    // Mengambil nilai dari webhook
-    const value = changes.value;
-    const businessPhoneNumberId = value.metadata?.phone_number_id; // Mengambil ID nomor telepon bisnis
-    const messages = value.messages?.[0]; // Mengambil pesan pertama dari nilai
-    const statuses = value.statuses?.[0]; // Mengambil status pertama dari nilai
-    const messageTimestamp = messages?.timestamp; // Mengambil timestamp pesan
-    const statusTimestamp = statuses?.timestamp; // Mengambil timestamp status
-    const userPhoneNumber = messages?.from || statuses?.recipient_id; // Mengambil nomor telepon pengguna dari pesan atau status
-  
-  // menangani respon tanggapan pegawai
+  // Mengambil nilai dari webhook
+  const value = changes.value;
+  const businessPhoneNumberId = value.metadata?.phone_number_id; // Mengambil ID nomor telepon bisnis
+  const messages = value.messages?.[0]; // Mengambil pesan pertama dari nilai
+  const statuses = value.statuses?.[0]; // Mengambil status pertama dari nilai
+  const messageTimestamp = messages?.timestamp; // Mengambil timestamp pesan
+  const statusTimestamp = statuses?.timestamp; // Mengambil timestamp status
+  const userPhoneNumber = messages?.from || statuses?.recipient_id; // Mengambil nomor telepon pengguna dari pesan atau status
+
+  // menangani respon pertama tanggapan pegawai
   if (messages && messages?.interactive) {
     const { interactive } = messages;
     if (interactive.button_reply) {
       const { id: buttonId } = interactive.button_reply;
       const uniqueId = buttonId.split('_')[1]; //nomor penanya
-      
-      console.log(`Pegawai menanggapi pertanyaan dengan unique_id: ${uniqueId}`);
+      sessionStatus[uniqueId] = { lastActive: Date.now(), optionSession: 4, businessPhoneNumberId: businessPhoneNumberId, pegawaiPhoneNumber: userPhoneNumber };
+      console.log("-------------------------------------------------------");
+      console.log(`Pegawai ${getStaffNameByNumber(userPhoneNumber)} menanggapi pertanyaan dari nomor: ${uniqueId}`);
+      console.log("SESSION = ", sessionStatus);
+      console.log("-------------------------------------------------------");
       // Logika tambahan untuk menangani respons, misalnya:
       // - Menyimpan respons dalam database
       // - Memperbarui status sesi
       // - Mengirim pesan tindak lanjut ke pengguna atau pegawai
 
       // Contoh logika tambahan
-      pegawaiConnect(uniqueId, userPhoneNumber, businessPhoneNumberId, messageTimestamp);
+      availablePegawai = availablePegawai.filter(number => number !== userPhoneNumber);
+      await sendWhatsAppMessage(businessPhoneNumberId, uniqueId, `${connectedWithPegawai}${getStaffNameByNumber(userPhoneNumber)}`);
     }
+    res.sendStatus(200);
+    return
   }
 
-
-  // menangani pesan yang dikirim pegawai agar diteruskan ke penanya
-  if (isPegawaiPhoneNumberInSession){
-  // responseText = "responsePegawai";
-  // sessionStatus[userPhoneNumber] = { lastActive: Date.now(), pegawaiPhoneNumber: pegawaiPhoneNumber };
-  // availablePegawai = availablePegawai.filter(number => number !== pegawaiPhoneNumber);
-  console.log("available pegawai ", availablePegawai);
-  }
 
   // Menangani pesan teks yang diterima
   if (messages && messages.timestamp) {
@@ -239,7 +237,6 @@ app.post("/webhook", signatureRequired, async (req, res) => {
     // console.log("------------------------------");
     await markMessageAsSeen(businessPhoneNumberId, messages.id);
     // await showTypingIndicator());
-
     // Handle message logic here, e.g., reply to the message
   } else if (statuses && statuses.timestamp) {
     // Menangani pembaruan status yang diterima
@@ -248,23 +245,25 @@ app.post("/webhook", signatureRequired, async (req, res) => {
     // console.log("------------------------------");
 
     // Handle status update logic here, if needed
+    res.sendStatus(200);
+    return
   } else {
     // Menangani payload webhook yang tidak dikenali
     console.log("--- Unknown Webhook Payload ---");
     console.log("Incoming webhook message:", JSON.stringify(req.body, null, 2));
     console.log("------------------------------");
-
+    res.sendStatus(200);
+    return
     // Handle unknown webhook logic here, if needed
   }
-
 
   // Handle unsupported message types
   if (messages?.type && messages.type !== "text") {
     // Mengirim pesan balasan untuk jenis pesan yang tidak didukung
     await sendWhatsAppMessage(businessPhoneNumberId, userPhoneNumber, unsupportedType);
-    sessionStatus[userPhoneNumber] = { lastActive: Date.now(), optionSession: null, businessPhoneNumberId: businessPhoneNumberId, pegawaiPhoneNumber:null };
+    sessionStatus[userPhoneNumber] = { lastActive: Date.now(), optionSession: null, businessPhoneNumberId: businessPhoneNumberId, pegawaiPhoneNumber: null };
     res.sendStatus(200);
-    return;
+    return
   }
 
   // Handle message sent when server offline
@@ -272,40 +271,51 @@ app.post("/webhook", signatureRequired, async (req, res) => {
     // Mengirim pesan balasan dari pesan yang dikirim ketika server offline
     await sendWhatsAppMessage(businessPhoneNumberId, userPhoneNumber, backOnline, messages?.id);
     await sendWhatsAppMessage(businessPhoneNumberId, userPhoneNumber, homeMessage);
-    sessionStatus[userPhoneNumber] = { lastActive: Date.now(), optionSession: null, businessPhoneNumberId: businessPhoneNumberId, pegawaiPhoneNumber:null };
+    sessionStatus[userPhoneNumber] = { lastActive: Date.now(), optionSession: null, businessPhoneNumberId: businessPhoneNumberId, pegawaiPhoneNumber: null };
     // Tandai pengguna sudah menerima balasan
     repliedUsers[userPhoneNumber] = true;
     res.sendStatus(200);
+    return
   }
 
   // Handle First Message
-  if ((messageTimestamp > serverOnlineTime) && !(userPhoneNumber in sessionStatus)) {
+  if ((messageTimestamp > serverOnlineTime) && (!(userPhoneNumber in sessionStatus)) && !isPegawaiPhoneNumberInSession(sessionStatus, userPhoneNumber)) {
     // Mengirim pesan balasan untuk pesan pertama setelah server online
-    sessionStatus[userPhoneNumber] = { lastActive: Date.now(), optionSession: null, businessPhoneNumberId: businessPhoneNumberId, pegawaiPhoneNumber:null };
+    sessionStatus[userPhoneNumber] = { lastActive: Date.now(), optionSession: null, businessPhoneNumberId: businessPhoneNumberId, pegawaiPhoneNumber: null };
     await sendWhatsAppMessage(businessPhoneNumberId, userPhoneNumber, homeMessage);
     res.sendStatus(200);
     return;
   }
 
   // Handle Menu Message
-  if ((messageTimestamp > serverOnlineTime) && messages && (userPhoneNumber in sessionStatus)) {
+  if ((messageTimestamp > serverOnlineTime) && messages && ((userPhoneNumber in sessionStatus) || isPegawaiPhoneNumberInSession(sessionStatus, userPhoneNumber))) {
     let responseText = "";
+
     if (messages.text) {
-      const { optionSession } = sessionStatus[userPhoneNumber];
       const userMessage = messages.text.body.trim().toLowerCase();
       const isValidOption = validOptions.includes(userMessage);
 
-      {// Log informasi penting untuk debug atau analisis
-        console.log("----------------------------------");
-        console.log("optionSession = ", optionSession);
-        console.log("isValidOption = ", isValidOption);
-        console.log("userMessage = ", userMessage);
-        console.log("businessPhoneNumberId = ", businessPhoneNumberId);
-        console.log("userPhoneNumber = ", userPhoneNumber);
-        console.log("----------------------------------");
+      // menangani pesan yang dikirim pegawai agar diteruskan ke penanya
+      if (isPegawaiPhoneNumberInSession(sessionStatus, userPhoneNumber)) {
+        responseText = userMessage
+        console.log("PESAN PEGAWAI DITERUSKAN KE PENANYA ", getUserPhoneNumberInSession(sessionStatus, userPhoneNumber));
+        await sendWhatsAppMessage(businessPhoneNumberId, getUserPhoneNumberInSession(sessionStatus, userPhoneNumber), responseText);
+        res.sendStatus(200);
+        return
       }
+      const { optionSession } = sessionStatus[userPhoneNumber];
+      // Log informasi penting untuk debug atau analisis
+      console.log("----------------------------------");
+      console.log("optionSession = ", optionSession);
+      console.log("isValidOption = ", isValidOption);
+      console.log("userMessage = ", userMessage);
+      console.log("businessPhoneNumberId = ", businessPhoneNumberId);
+      console.log("userPhoneNumber = ", userPhoneNumber);
+      console.log("SESSION = ", sessionStatus);
+      console.log("----------------------------------");
 
       if (optionSession) {
+        console.log("MASUK 1");
         // Handle jika ada opsi yang sedang dipilih pengguna
         if (userMessage === "0") {
           // Handle jika pengguna memilih untuk kembali ke menu utama
@@ -326,12 +336,15 @@ app.post("/webhook", signatureRequired, async (req, res) => {
             responseText = await handleGeminiResponse(userMessage);
             break;
           case "4":
-            // responsePegawai = await handlePSTResponse(availablePegawai, sessionStatus, userMessage);
-            responseText = "dummy"
-            break;
+            console.log("MASUK");
+            responseText = userMessage;
+            await sendMessageToPegawai(businessPhoneNumberId, sessionStatus[userPhoneNumber].pegawaiPhoneNumber, responseText, userPhoneNumber);
+            res.sendStatus(200);
+            return;
         }
       }
       else if (isValidOption) {
+        console.log("MASUK 2");
         // Handle jika pesan yang diterima merupakan opsi yang valid
         sessionStatus[userPhoneNumber].optionSession = userMessage;
         switch (userMessage) {
@@ -350,29 +363,31 @@ app.post("/webhook", signatureRequired, async (req, res) => {
           case "4":
             responseText = optionfour + backToMenu;
             await pegawaiBroadcast(businessPhoneNumberId, availablePegawai, userMessage, userPhoneNumber);
-            break;
+            return
         }
       } else {
+        console.log("MASUK 3");
         // Handle jika pesan yang diterima tidak sesuai dengan opsi yang valid
         responseText = wrongCommand + homeMessage;
-        sessionStatus[userPhoneNumber] = { lastActive: Date.now(), optionSession: null, businessPhoneNumberId: businessPhoneNumberId, pegawaiPhoneNumber:null };
+        sessionStatus[userPhoneNumber] = { lastActive: Date.now(), optionSession: null, businessPhoneNumberId: businessPhoneNumberId, pegawaiPhoneNumber: null };
       }
+      console.log("MASUK Z");
       // Mengirim pesan balasan kembali ke pengguna
       await sendWhatsAppMessage(businessPhoneNumberId, userPhoneNumber, responseText);
       res.sendStatus(200);
       return;
     }
+
   }
 
-  // {// Log the timestamps to the console
-  //   console.log("---------------------------------------------------------------------------------------");
-  //   console.log(`Server Online Time: ${new Date(serverOnlineTime * 1000).toLocaleString()}`);
-  //   console.log(messageTimestamp ? `Message timestamp: ${new Date(messageTimestamp * 1000).toLocaleString()}` : 'Message timestamp not available.');
-  //   console.log(statusTimestamp ? `Status timestamp: ${new Date(statusTimestamp * 1000).toLocaleString()}` : 'Status timestamp not available.');
-  //   console.log("SESSION = ", sessionStatus);
-  //   console.log("available pegawai ", availablePegawai);
-  //   console.log("---------------------------------------------------------------------------------------");
-  // }
+  // Log the timestamps to the console
+  console.log("---------------------------------------------------------------------------------------");
+  console.log(`Server Online Time: ${new Date(serverOnlineTime * 1000).toLocaleString()}`);
+  console.log(messageTimestamp ? `Message timestamp: ${new Date(messageTimestamp * 1000).toLocaleString()}` : 'Message timestamp not available.');
+  console.log(statusTimestamp ? `Status timestamp: ${new Date(statusTimestamp * 1000).toLocaleString()}` : 'Status timestamp not available.');
+  console.log("SESSION = ", sessionStatus);
+  console.log("available pegawai ", availablePegawai);
+  console.log("---------------------------------------------------------------------------------------");
 });
 
 
