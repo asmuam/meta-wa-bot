@@ -205,6 +205,25 @@ app.post("/webhook", signatureRequired, async (req, res) => {
     const statusTimestamp = statuses?.timestamp; // Mengambil timestamp status
     const userPhoneNumber = messages?.from || statuses?.recipient_id; // Mengambil nomor telepon pengguna dari pesan atau status
   
+  // menangani respon tanggapan pegawai
+  if (messages && messages?.interactive) {
+    const { interactive } = messages;
+    if (interactive.button_reply) {
+      const { id: buttonId } = interactive.button_reply;
+      const uniqueId = buttonId.split('_')[1]; //nomor penanya
+      
+      console.log(`Pegawai menanggapi pertanyaan dengan unique_id: ${uniqueId}`);
+      // Logika tambahan untuk menangani respons, misalnya:
+      // - Menyimpan respons dalam database
+      // - Memperbarui status sesi
+      // - Mengirim pesan tindak lanjut ke pengguna atau pegawai
+
+      // Contoh logika tambahan
+      pegawaiConnect(uniqueId, userPhoneNumber, businessPhoneNumberId, messageTimestamp);
+    }
+  }
+
+
   // menangani pesan yang dikirim pegawai agar diteruskan ke penanya
   if (isPegawaiPhoneNumberInSession){
   // responseText = "responsePegawai";
@@ -215,18 +234,18 @@ app.post("/webhook", signatureRequired, async (req, res) => {
 
   // Menangani pesan teks yang diterima
   if (messages && messages.timestamp) {
-    console.log("--- Received Text Message ---");
-    console.log(JSON.stringify(req.body, null, 2));
-    console.log("------------------------------");
+    // console.log("--- Received Text Message ---");
+    // console.log(JSON.stringify(req.body, null, 2));
+    // console.log("------------------------------");
     await markMessageAsSeen(businessPhoneNumberId, messages.id);
     // await showTypingIndicator());
 
     // Handle message logic here, e.g., reply to the message
   } else if (statuses && statuses.timestamp) {
     // Menangani pembaruan status yang diterima
-    console.log("--- Received Status Update ---");
+    // console.log("--- Received Status Update ---");
     // console.log(JSON.stringify(req.body, null, 2));
-    console.log("------------------------------");
+    // console.log("------------------------------");
 
     // Handle status update logic here, if needed
   } else {
@@ -330,7 +349,7 @@ app.post("/webhook", signatureRequired, async (req, res) => {
             break;
           case "4":
             responseText = optionfour + backToMenu;
-            await pegawaiBroadcast(businessPhoneNumberId, availablePegawai, userMessage);
+            await pegawaiBroadcast(businessPhoneNumberId, availablePegawai, userMessage, userPhoneNumber);
             break;
         }
       } else {
@@ -345,15 +364,15 @@ app.post("/webhook", signatureRequired, async (req, res) => {
     }
   }
 
-  {// Log the timestamps to the console
-    console.log("---------------------------------------------------------------------------------------");
-    console.log(`Server Online Time: ${new Date(serverOnlineTime * 1000).toLocaleString()}`);
-    console.log(messageTimestamp ? `Message timestamp: ${new Date(messageTimestamp * 1000).toLocaleString()}` : 'Message timestamp not available.');
-    console.log(statusTimestamp ? `Status timestamp: ${new Date(statusTimestamp * 1000).toLocaleString()}` : 'Status timestamp not available.');
-    console.log("SESSION = ", sessionStatus);
-    console.log("available pegawai ", availablePegawai);
-    console.log("---------------------------------------------------------------------------------------");
-  }
+  // {// Log the timestamps to the console
+  //   console.log("---------------------------------------------------------------------------------------");
+  //   console.log(`Server Online Time: ${new Date(serverOnlineTime * 1000).toLocaleString()}`);
+  //   console.log(messageTimestamp ? `Message timestamp: ${new Date(messageTimestamp * 1000).toLocaleString()}` : 'Message timestamp not available.');
+  //   console.log(statusTimestamp ? `Status timestamp: ${new Date(statusTimestamp * 1000).toLocaleString()}` : 'Status timestamp not available.');
+  //   console.log("SESSION = ", sessionStatus);
+  //   console.log("available pegawai ", availablePegawai);
+  //   console.log("---------------------------------------------------------------------------------------");
+  // }
 });
 
 

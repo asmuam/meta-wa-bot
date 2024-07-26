@@ -34,3 +34,7 @@ export const sessionStatus = {};
 // daftar nomor pegawai
 const PEGAWAI_NUMBER_JSON = process.env.PEGAWAI_NUMBER;
 export const PEGAWAI_NUMBERS = JSON.parse(PEGAWAI_NUMBER_JSON);
+export const broadcastPegawai = 
+"==================================\n"+
+"Permintaan Bertanya!\n\n"+
+"Klik *Mulai Sesi!* untuk memulai sesi"
