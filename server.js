@@ -9,7 +9,7 @@
 import { handleStatBoy, handleStatGen } from "./statsHandlers.js";
 import { handleGeminiResponse } from "./aiHandlers.js";
 import { signatureRequired } from "./security.js";
-import { getStaffNameByNumber, getUserPhoneNumberInSession, isPegawaiPhoneNumberInSession } from "./func.js";
+import { getStaffNameByNumber, getUserPhoneNumberInSession, isPegawai, isPegawaiPhoneNumberInSession } from "./func.js";
 import { handlePSTResponse, pegawaiBroadcast, sendMessageToPegawai } from "./pegawaiHandlers.js"
 import { unsupportedType, homeMessage, backOnline, wrongCommand, optionOne, backToMenu, optionTwo, optionThree, optionfour, app, validOptions, WEBHOOK_VERIFY_TOKEN, GRAPH_API_TOKEN, PORT, sessionStatus, PEGAWAI_NUMBERS, connectedWithPegawai, SESSION_LIMIT } from "./const.js";
 import axios from 'axios';
@@ -70,7 +70,7 @@ async function sendWhatsAppMessage(phone_number_id, recipient, text, context_mes
   }
 
   try {
-    const response = await axios.post(url, data, { headers });
+    await axios.post(url, data, { headers });
     console.log("Message sent successfully:");
   } catch (error) {
     console.error("Error sending message:");
@@ -123,10 +123,18 @@ async function showTypingIndicator() {
  * @returns {Promise<void>}
  */
 async function handleSessionExpiration(business_phone_number_id, recipient) {
-  delete sessionStatus[recipient];
+  const sessionQNAExpiredMessage = "Sesi QNA telah Ditutup";
   const sessionExpiredMessage = "Sesi Anda telah berakhir. Silahkan kirim pesan lagi untuk memulai sesi baru.";
+
+  if (sessionStatus[recipient]) {
+    await sendWhatsAppMessage(business_phone_number_id, recipient, sessionExpiredMessage);
+    if (sessionStatus[recipient].pegawaiPhoneNumber) {
+      await sendWhatsAppMessage(business_phone_number_id, sessionStatus[recipient].pegawaiPhoneNumber, sessionQNAExpiredMessage);
+      availablePegawai.push(sessionStatus[recipient].pegawaiPhoneNumber);
+    } 
+  }
+  delete sessionStatus[recipient];
   console.log("SESSION EXPIRED :", business_phone_number_id, " ", recipient);
-  await sendWhatsAppMessage(business_phone_number_id, recipient, sessionExpiredMessage);
 }
 
 
@@ -211,7 +219,7 @@ app.post("/webhook", signatureRequired, async (req, res) => {
     if (interactive.button_reply) {
       const { id: buttonId } = interactive.button_reply;
       const uniqueId = buttonId.split('_')[1]; //nomor penanya
-      sessionStatus[uniqueId] = { lastActive: Date.now(), optionSession: 4, businessPhoneNumberId: businessPhoneNumberId, pegawaiPhoneNumber: userPhoneNumber };
+      sessionStatus[uniqueId] = { lastActive: Date.now(), optionSession: "4", businessPhoneNumberId: businessPhoneNumberId, pegawaiPhoneNumber: userPhoneNumber };
       console.log("-------------------------------------------------------");
       console.log(`Pegawai ${getStaffNameByNumber(userPhoneNumber)} menanggapi pertanyaan dari nomor: ${uniqueId}`);
       console.log("SESSION = ", sessionStatus);
@@ -267,9 +275,9 @@ app.post("/webhook", signatureRequired, async (req, res) => {
   }
 
   // Handle message sent when server offline
-  if ((messageTimestamp < serverOnlineTime) && !(userPhoneNumber in repliedUsers)) {
+  if ((messageTimestamp < serverOnlineTime) && !(userPhoneNumber in repliedUsers) && !isPegawai(userPhoneNumber)) {
     // Mengirim pesan balasan dari pesan yang dikirim ketika server offline
-    await sendWhatsAppMessage(businessPhoneNumberId, userPhoneNumber, backOnline, messages?.id);
+    await sendWhatsAppMessage(businessPhoneNumberId, userPhoneNumber, backOnline, null);
     await sendWhatsAppMessage(businessPhoneNumberId, userPhoneNumber, homeMessage);
     sessionStatus[userPhoneNumber] = { lastActive: Date.now(), optionSession: null, businessPhoneNumberId: businessPhoneNumberId, pegawaiPhoneNumber: null };
     // Tandai pengguna sudah menerima balasan
@@ -304,7 +312,6 @@ app.post("/webhook", signatureRequired, async (req, res) => {
         return
       }
       const { optionSession } = sessionStatus[userPhoneNumber];
-      // Log informasi penting untuk debug atau analisis
       console.log("----------------------------------");
       console.log("optionSession = ", optionSession);
       console.log("isValidOption = ", isValidOption);
@@ -314,17 +321,15 @@ app.post("/webhook", signatureRequired, async (req, res) => {
       console.log("SESSION = ", sessionStatus);
       console.log("----------------------------------");
 
+      if (userMessage === "0") {
+        sessionStatus[userPhoneNumber] = { lastActive: Date.now(), optionSession: null, businessPhoneNumberId: businessPhoneNumberId };
+        await sendWhatsAppMessage(businessPhoneNumberId, userPhoneNumber, homeMessage);
+        res.sendStatus(200);
+        return;
+      }
+
       if (optionSession) {
-        console.log("MASUK 1");
-        // Handle jika ada opsi yang sedang dipilih pengguna
-        if (userMessage === "0") {
-          // Handle jika pengguna memilih untuk kembali ke menu utama
-          sessionStatus[userPhoneNumber] = { lastActive: Date.now(), optionSession: null, businessPhoneNumberId: businessPhoneNumberId };
-          await sendWhatsAppMessage(businessPhoneNumberId, userPhoneNumber, homeMessage);
-          res.sendStatus(200);
-          return;
-        }
-        // Switch case untuk menangani setiap opsi yang dipilih pengguna
+        console.log("LOG 3");
         switch (optionSession) {
           case "1":
             responseText = await handleStatBoy(userMessage);
@@ -336,16 +341,12 @@ app.post("/webhook", signatureRequired, async (req, res) => {
             responseText = await handleGeminiResponse(userMessage);
             break;
           case "4":
-            console.log("MASUK");
-            responseText = userMessage;
-            await sendMessageToPegawai(businessPhoneNumberId, sessionStatus[userPhoneNumber].pegawaiPhoneNumber, responseText, userPhoneNumber);
+            await sendMessageToPegawai(businessPhoneNumberId, sessionStatus[userPhoneNumber].pegawaiPhoneNumber, userMessage, userPhoneNumber);
             res.sendStatus(200);
             return;
         }
-      }
-      else if (isValidOption) {
-        console.log("MASUK 2");
-        // Handle jika pesan yang diterima merupakan opsi yang valid
+      } else if (isValidOption) {
+        console.log("LOG 4");
         sessionStatus[userPhoneNumber].optionSession = userMessage;
         switch (userMessage) {
           case "0":
@@ -363,21 +364,19 @@ app.post("/webhook", signatureRequired, async (req, res) => {
           case "4":
             responseText = optionfour + backToMenu;
             await pegawaiBroadcast(businessPhoneNumberId, availablePegawai, userMessage, userPhoneNumber);
-            return
+            break
         }
       } else {
-        console.log("MASUK 3");
-        // Handle jika pesan yang diterima tidak sesuai dengan opsi yang valid
         responseText = wrongCommand + homeMessage;
         sessionStatus[userPhoneNumber] = { lastActive: Date.now(), optionSession: null, businessPhoneNumberId: businessPhoneNumberId, pegawaiPhoneNumber: null };
       }
-      console.log("MASUK Z");
-      // Mengirim pesan balasan kembali ke pengguna
+
+      console.log("LOG 5");
+      console.log("responseText:", responseText);
       await sendWhatsAppMessage(businessPhoneNumberId, userPhoneNumber, responseText);
       res.sendStatus(200);
-      return;
-    }
 
+    }
   }
 
   // Log the timestamps to the console

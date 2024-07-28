@@ -35,10 +35,10 @@ export const sessionStatus = {};
 const PEGAWAI_NUMBER_JSON = process.env.PEGAWAI_NUMBER;
 export const PEGAWAI_NUMBERS = JSON.parse(PEGAWAI_NUMBER_JSON);
 export const broadcastPegawai = 
-"Permintaan Bertanya!\n\n"+
+"Terdapat Responden yang meminta Asistensi!\n\n"+
 "Klik *Mulai Sesi!* untuk memulai sesi"
 
 export const connectedWithPegawai = 
-"Anda Telah Terhubung Dengan Admin! "
+"Anda Telah Terhubung Dengan Admin!~"
 
 export const SESSION_LIMIT = 180000 // 3 menit (milisecond)

@@ -18,9 +18,7 @@ export function validateSignature(payload, signature) {
         .createHmac('sha256', process.env.APP_SECRET)
         .update(payloadString)
         .digest('hex');
-        console.log("expectedSignature : ", expectedSignature);
         console.log("payload = ", payloadString);
-        console.log("signature : ", signature);
     return crypto.timingSafeEqual(Buffer.from(expectedSignature), Buffer.from(signature));
 }
 
@@ -34,5 +32,6 @@ export function signatureRequired(req, res, next) {
         console.error('Signature verification failed!');
         return res.status(403).json({ status: 'error', message: 'Invalid signature' });
     }
+    console.error('Signature verification success!');
     next();
 }

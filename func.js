@@ -1,14 +1,19 @@
 import { PEGAWAI_NUMBERS } from "./const.js";
 
 export function isPegawaiPhoneNumberInSession(session, nomorPegawai) {
-    // Iterate through each session
-    for (const key in session) {
-      if (session[key].pegawaiPhoneNumber === nomorPegawai) {
-        return true; // Found the pegawaiPhoneNumber
-      }
+  // Iterate through each session
+  for (const key in session) {
+    if (session[key].pegawaiPhoneNumber === nomorPegawai) {
+      return true; // Found the pegawaiPhoneNumber
     }
-    return false; // pegawaiPhoneNumber not found in any session
   }
+  return false; // pegawaiPhoneNumber not found in any session
+}
+
+export function isPegawai(userPhoneNumber) {
+  // Check if userPhoneNumber exists in PEGAWAI_NUMBERS array
+  return PEGAWAI_NUMBERS.some(pegawai => pegawai.number === userPhoneNumber);
+}
 
 /**
 * Get the name of the staff member given their phone number.
@@ -16,10 +21,10 @@ export function isPegawaiPhoneNumberInSession(session, nomorPegawai) {
 * @returns {string | null} - The name of the staff member or null if not found.
 */
 export function getStaffNameByNumber(number) {
- // Find the staff member with the given number
- const staff = PEGAWAI_NUMBERS.find(pegawai => pegawai.number === number);
- // Return the name if found, otherwise return null
- return staff ? staff.name : null;
+  // Find the staff member with the given number
+  const staff = PEGAWAI_NUMBERS.find(pegawai => pegawai.number === number);
+  // Return the name if found, otherwise return null
+  return staff ? staff.name : null;
 }
 
 /**
@@ -28,13 +33,13 @@ export function getStaffNameByNumber(number) {
 * @returns {string | null} - The user phone number (key) or null if not found.
 */
 export function getUserPhoneNumberInSession(session, pegawaiPhoneNumber) {
- // Iterate over the keys in the SESSION object
- for (const userPhoneNumber in session) {
-   // Check if the pegawaiPhoneNumber matches
-   if (session[userPhoneNumber].pegawaiPhoneNumber === pegawaiPhoneNumber) {
-     return userPhoneNumber;
-   }
- }
- // Return null if no match is found
- return null;
+  // Iterate over the keys in the SESSION object
+  for (const userPhoneNumber in session) {
+    // Check if the pegawaiPhoneNumber matches
+    if (session[userPhoneNumber].pegawaiPhoneNumber === pegawaiPhoneNumber) {
+      return userPhoneNumber;
+    }
+  }
+  // Return null if no match is found
+  return null;
 }

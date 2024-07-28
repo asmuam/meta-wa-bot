@@ -14,13 +14,12 @@ export async function sendMessageToPegawai(businessPhoneNumberId, pegawaiNumber,
       to: pegawaiNumber,
       type: 'interactive',
       interactive: {
+        header: {
+          type: 'text',
+          text:
+            "TANGGAPI SESI TANYA JAWAB?"
+        },
         type: 'button',
-        // header: {
-        //   type: 'image',
-        //   image: {
-        //     link: 'https://boyolalikab.bps.go.id/backend/images/Header-Frontend-Besar-ind.png' // Replace with your image URL
-        //   }
-        // },
         body: {
           text: userMessage
         },
@@ -44,7 +43,7 @@ export async function sendMessageToPegawai(businessPhoneNumberId, pegawaiNumber,
       text: { body: userMessage }, // Correct structure for text messages
     };
   }
-  
+
   const url = `https://graph.facebook.com/v20.0/${businessPhoneNumberId}/messages`;
   const headers = {
     Authorization: `Bearer ${GRAPH_API_TOKEN}`,
@@ -75,7 +74,6 @@ export async function pegawaiBroadcast(businessPhoneNumberId, availablePegawai, 
       console.error(`Gagal mengirim pesan ke ${number}:`, error);
     }
   }
-  return
 }
 
 export function handlePSTResponse() {
