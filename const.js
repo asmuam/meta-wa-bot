@@ -12,7 +12,7 @@ const menuMessage =
 "Ketik *4* untuk bertanya dengan CS\n\n"+
 "📷 *Instagram* : https://www.instagram.com/bpskabboyolali/\n"+
 "🎥 *YouTube* : https://www.youtube.com/@BPSKabupatenBoyolali"
-export const unsupportedType = "Mohon Maaf. Kami Hanya Mendukung percakapan berbasis teks." + menuMessage
+export const unsupportedType = "Mohon Maaf. Kami Hanya Mendukung percakapan berbasis teks."
 export const homeMessage = welcomeMessage+menuMessage 
 export const backOnline = 'Bot telah kembali!';
 export const wrongCommand = "Mohon Maaf. Silahkan Pilih Opsi Berikut Untuk Melanjutkan\n\n"

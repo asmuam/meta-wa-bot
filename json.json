@@ -1,0 +1,42 @@
+{
+    "object": "whatsapp_business_account",
+    "entry": [
+        {
+            "id": "332787393262213",
+            "changes": [
+                {
+                    "value": {
+                        "messaging_product": "whatsapp",
+                        "metadata": {
+                            "display_phone_number": "6285183098108",
+                            "phone_number_id": "401522063036470"
+                        },
+                        "contacts": [
+                            {
+                                "profile": {
+                                    "name": "asmuammal"
+                                },
+                                "wa_id": "6285163513267"
+                            }
+                        ],
+                        "messages": [
+                            {
+                                "from": "6285163513267",
+                                "id": "wamid.HBgNNjI4NTE2MzUxMzI2NxUCABIYIEVCNTU0Mjk1QUY0OEFBQkVGMDFDRDc3MjE0RDk0QkQ2AA==",
+                                "timestamp": "1722256862",
+                                "type": "sticker",
+                                "sticker": {
+                                    "mime_type": "image/webp",
+                                    "sha256": "UHTgmb4skt+rW8umDlzlMBhfYe7NPAmHlrujDxtFiWY=",
+                                    "id": "1405339160142719",
+                                    "animated": false
+                                }
+                            }
+                        ]
+                    },
+                    "field": "messages"
+                }
+            ]
+        }
+    ]
+}

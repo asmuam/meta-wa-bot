@@ -62,7 +62,12 @@ export async function sendMessageToPegawai(businessPhoneNumberId, pegawaiNumber,
   }
 }
 
-
+/**
+ * Mengirim pesan WhatsApp ke semua pegawai.
+ * Pesan yang dikirim hanya bisa diterkirim ke pegawai apabila, nomor pegawai pernah berinteraksi dengan nomor Bot tidak kurang dari 24 jam
+ * sehingga nomor pegawai diharuskan berinteraksi dengan Bot minimal sekali dalam 24 jam
+ * alternatif lain adalah dengan menggunakan template yang disediakan facebook.dev namun perlu diperhatikan terdapat batasan untuk versi gratis.
+ */
 export async function pegawaiBroadcast(businessPhoneNumberId, availablePegawai, userMessage, userPhoneNumber) {
   if (availablePegawai && availablePegawai.length > 0){
     console.log("AVAILABLE PEGAWAI == ",availablePegawai);

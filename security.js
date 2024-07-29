@@ -6,6 +6,7 @@ dotenv.config();
 
 /**
  * Validates the incoming payload's signature against the expected signature.
+ * it doesnt work with another type messages (e.g audio, sticker, etc) or even emoticon
  *
  * @param {string} payload - The payload received from the request.
  * @param {string} signature - The signature received from the request headers.
@@ -16,7 +17,7 @@ export function validateSignature(payload, signature) {
     const payloadString = JSON.stringify(payload);
     const expectedSignature = crypto
         .createHmac('sha256', process.env.APP_SECRET)
-        .update(payloadString)
+        .update(payloadString, 'latin-1')
         .digest('hex');
         console.log("Signature = ", signature);
         console.log("payload = ", payloadString);
@@ -29,6 +30,7 @@ export function validateSignature(payload, signature) {
  */
 export function signatureRequired(req, res, next) {
     console.log("Header = ", req.headers);
+    console.log("Body = ", req.body);
     const signature = req.headers['x-hub-signature-256']?.substring(7); // Removing 'sha256='
     const payload = req.body; // Raw body of the request for signature verification
     if (!validateSignature(payload, signature)) {
