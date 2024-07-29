@@ -1,7 +1,7 @@
 // pegawaisHandler.js
 import dotenv from 'dotenv';
 import axios from 'axios';
-import { backToMenu, broadcastPegawai } from "./const.js";
+import { backToMenu, broadcastPegawai, noAvailablePegawai } from "./const.js";
 import { GRAPH_API_TOKEN } from './const.js';
 dotenv.config();
 
@@ -64,15 +64,21 @@ export async function sendMessageToPegawai(businessPhoneNumberId, pegawaiNumber,
 
 
 export async function pegawaiBroadcast(businessPhoneNumberId, availablePegawai, userMessage, userPhoneNumber) {
-  // kirim broadcast ke semua pegawai
+  if (availablePegawai && availablePegawai.length > 0){
+    console.log("AVAILABLE PEGAWAI == ",availablePegawai);
+      // kirim broadcast ke semua pegawai
   for (const number of availablePegawai) {
     try {
-      // Misalkan menggunakan API untuk mengirim pesan
       await sendMessageToPegawai(businessPhoneNumberId, number, userMessage, userPhoneNumber)
       console.log(`Pesan terkirim ke ${number}`);
     } catch (error) {
       console.error(`Gagal mengirim pesan ke ${number}:`, error);
+      return false
     }
+  }
+  return true
+  } else {
+    return false
   }
 }
 
