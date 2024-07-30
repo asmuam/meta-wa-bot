@@ -33,7 +33,7 @@ let serverOnlineTime = 0;
 let repliedUsers = {};
 
 
-const MAX_MESSAGES_PER_MINUTE = 10; // Set the maximum number of messages allowed per minute
+const MAX_MESSAGES_PER_MINUTE = 30; // Set the maximum number of messages allowed per minute
 const SPAM_THRESHOLD = 1; // Set the number of warnings before blocking
 
 let userActivity = {}; // To track user activity and warnings
@@ -249,6 +249,7 @@ app.post("/webhook", async (req, res) => {
   }
 
   console.log("SESSION AT START == ",sessionStatus);
+  console.log("REQ BODY ENTRY CHANGES == ",JSON.stringify(changes));
 
   // Mengambil nilai dari webhook
   const value = changes.value;
@@ -335,10 +336,13 @@ app.post("/webhook", async (req, res) => {
   // }
 
   // Handle First Message
-  if ((messageTimestamp > serverOnlineTime) && (!(sessionStatus[userPhoneNumber]))) {
+  if ((messageTimestamp > serverOnlineTime) && (!(sessionStatus[userPhoneNumber])) && !isPegawaiPhoneNumberInSession(sessionStatus, userPhoneNumber)) {
+    const userMessage = messages.text.body.trim().toLowerCase();
     // Mengirim pesan balasan untuk pesan pertama setelah server online
     if (isPegawaiPhoneNumberInSession(sessionStatus, userPhoneNumber)) {
       console.log("INI MESSAGE PERTAMA PEGAWAI KARENA MENJAWAB QNA");
+      console.log("PESAN PEGAWAI DITERUSKAN KE PENANYA ", getUserPhoneNumberInSession(sessionStatus, userPhoneNumber));
+      await sendWhatsAppMessage(businessPhoneNumberId, getUserPhoneNumberInSession(sessionStatus, userPhoneNumber), userMessage);
       res.sendStatus(200);
       return;
     }
@@ -348,7 +352,7 @@ app.post("/webhook", async (req, res) => {
       console.log("UNSUPPORTED FIRST MESSAGE TYPE");
       // Mengirim pesan balasan untuk jenis pesan yang tidak didukung
       await sendWhatsAppMessage(businessPhoneNumberId, userPhoneNumber, unsupportedType);
-      sessionStatus[userPhoneNumber] = { lastActive: Date.now() };
+      sessionStatus[userPhoneNumber].lastActive = Date.now();
     }
 
     console.log("FIRST MESSAGE");
@@ -369,7 +373,7 @@ app.post("/webhook", async (req, res) => {
   }
 
   // Handle Menu Message
-  if ((messageTimestamp > serverOnlineTime) && messages && ((sessionStatus[userPhoneNumber].optionSession) || isPegawaiPhoneNumberInSession(sessionStatus, userPhoneNumber))) {
+  if ((messageTimestamp > serverOnlineTime) && messages && ((sessionStatus[userPhoneNumber]?.optionSession) || isPegawaiPhoneNumberInSession(sessionStatus, userPhoneNumber))) {
     let responseText = "";
     let isBroadcast = true;
     if (messages.text) {
@@ -436,12 +440,20 @@ app.post("/webhook", async (req, res) => {
         }
       } else {
         responseText = wrongCommand + homeMessage;
-        sessionStatus[userPhoneNumber] = { lastActive: Date.now(), optionSession: "0"};
-      }
+        sessionStatus[userPhoneNumber] = {
+          ...sessionStatus[userPhoneNumber],
+          lastActive: Date.now(),
+          optionSession: "0"
+        };      }
       await sendWhatsAppMessage(businessPhoneNumberId, userPhoneNumber, responseText);
       if (!isBroadcast) {
         console.log("isBROADCAST == ", isBroadcast);
         sendWhatsAppMessage(businessPhoneNumberId, userPhoneNumber, noAvailablePegawai + backToMenu)
+        sessionStatus[userPhoneNumber] = {
+          ...sessionStatus[userPhoneNumber],
+          lastActive: Date.now(),
+          optionSession: "0"
+        }
       }
       res.sendStatus(200);
       return
