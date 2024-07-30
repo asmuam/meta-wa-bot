@@ -31,15 +31,25 @@ let repliedUsers = {};
 let userActivity = {}; // To track user activity and warnings
 
 /**
- * Handle spam protection for a given user.
- * @param {string} businessPhoneNumberId - The phone number of WABA.
- * @param {string} recipient - The phone number of the user.
- * @returns {boolean} - Returns true if the user is blocked, false otherwise.
+ * Handle spam protection for a given user by monitoring their message activity.
+ * This function keeps track of the number of messages a user sends within a given time window
+ * and applies spam protection rules accordingly.
+ *
+ * @param {string} businessPhoneNumberId - The phone number of the WhatsApp Business Account (WABA).
+ * @param {string} recipient - The phone number of the user who sent the message.
+ * @param {Object} [messages] - The message object containing message details. If null or undefined, no action is taken.
+ * @returns {Promise<boolean>} - Returns true if the user is blocked, false otherwise.
  */
-async function handleSpamProtection(businessPhoneNumberId, recipient) {
+async function handleSpamProtection(businessPhoneNumberId, recipient, messages) {
+  if (!messages) {
+    console.log("No messages found, skipping spam protection.");
+    return false;
+  }
+
   // Initialize user data if not present
   if (!userActivity[recipient]) {
     userActivity[recipient] = { messageCount: 0, lastMessageTime: Date.now(), warnings: 0 };
+    console.log(`Initialized user data for ${recipient}.`);
   }
 
   const currentTime = Date.now();
@@ -48,20 +58,26 @@ async function handleSpamProtection(businessPhoneNumberId, recipient) {
   // Reset message count if more than a minute has passed
   if (currentTime - userData.lastMessageTime > 60000) {  // 1 minute in milliseconds
     userData.messageCount = 0;
+    console.log(`Reset message count for ${recipient} due to inactivity.`);
   }
 
   userData.messageCount += 1;
   userData.lastMessageTime = currentTime;
+
+  console.log(`User ${recipient} has sent ${userData.messageCount} messages.`);
 
   // Check for spam behavior
   if (userData.messageCount > MAX_MESSAGES_PER_MINUTE) {
     userData.warnings += 1;
     userData.messageCount = 0; // Reset the message count after a warning
 
+    console.log(`User ${recipient} exceeded message limit. Warnings: ${userData.warnings}`);
+
     if (userData.warnings >= SPAM_THRESHOLD) {
       // Block user or take action (e.g., notify admin)
       try {
         await sendWhatsAppMessage(businessPhoneNumberId, recipient, "You have been blocked due to excessive messaging.");
+        console.log(`User ${recipient} has been blocked.`);
       } catch (error) {
         console.error("Failed to send block message:", error);
       }
@@ -71,15 +87,16 @@ async function handleSpamProtection(businessPhoneNumberId, recipient) {
       // Send warning message
       try {
         await sendWhatsAppMessage(businessPhoneNumberId, recipient, `Warning: Please reduce the number of messages. You have ${SPAM_THRESHOLD - userData.warnings} warnings left.`);
+        console.log(`Warning sent to user ${recipient}.`);
       } catch (error) {
         console.error("Failed to send warning message:", error);
       }
     }
   }
 
-  console.log("userData.messageCount =", userData.messageCount);
   return false;
 }
+
 
 
 /**
@@ -272,7 +289,9 @@ APP.post("/webhook", async (req, res) => {
   const messageTimestamp = messages?.timestamp; // Mengambil timestamp pesan
   const statusTimestamp = statuses?.timestamp; // Mengambil timestamp status
   const userPhoneNumber = messages?.from || statuses?.recipient_id; // Mengambil nomor telepon pengguna bot dari pesan atau status
-  const isBlocked = await handleSpamProtection(businessPhoneNumberId, userPhoneNumber);
+  const isBlocked = await handleSpamProtection(businessPhoneNumberId, userPhoneNumber, messages);
+  let responseText = "";
+  let isBroadcast = false; // Default to false unless a broadcast is initiated
 
   // Handle error
   if (errors) {
@@ -383,9 +402,6 @@ APP.post("/webhook", async (req, res) => {
 
  // Check if message is valid and the user is in session
  if (messageTimestamp > serverOnlineTime && messages && SESSION_STATUS[userPhoneNumber]) {
-  let responseText = "";
-  let isBroadcast = false; // Default to false unless a broadcast is initiated
-
   if (messages.text) {
     const userMessage = messages.text.body.trim().toLowerCase();
     const isValidOption = VALID_OPTIONS.includes(userMessage);
@@ -401,7 +417,7 @@ APP.post("/webhook", async (req, res) => {
       responseText = HOME_MESSAGE;
     } 
     // Handle messages based on the current session option
-    else if (optionSession && optionSession !== "0") {
+    else if (optionSession && optionSession != "0") {
       if (optionSession === "1") {
         responseText = await handleStatBoy(userMessage);
       } else if (optionSession === "2") {
