@@ -14,7 +14,6 @@ import { handlePSTResponse, pegawaiBroadcast, sendMessageToPegawai } from "./peg
 import { homeMessage, backOnline, wrongCommand, optionOne, backToMenu, optionTwo, optionThree, optionfour, app, validOptions, WEBHOOK_VERIFY_TOKEN, GRAPH_API_TOKEN, PORT, sessionStatus, PEGAWAI_NUMBERS, connectedWithPegawai, SESSION_LIMIT, noAvailablePegawai, unsupportedType } from "./const.js";
 import axios from 'axios';
 import express from 'express';
-import dotenv from 'dotenv';
 
 
 // Middleware
@@ -217,6 +216,7 @@ function checkSessionExpiration() {
  */
 setInterval(checkSessionExpiration, 60000);
 
+
 /**
  * Endpoint webhook untuk menangani pesan masuk dari WhatsApp.
  * Mengelola sesi pengguna, merespon pesan berdasarkan input pengguna, dan mengirim pesan balik ke pengguna.
@@ -248,8 +248,8 @@ app.post("/webhook", async (req, res) => {
     return;
   }
 
-  console.log("SESSION AT START == ",sessionStatus);
-  console.log("REQ BODY ENTRY CHANGES == ",JSON.stringify(changes));
+  console.log("SESSION AT START == ", sessionStatus);
+  console.log("REQ BODY ENTRY CHANGES == ", JSON.stringify(changes));
 
   // Mengambil nilai dari webhook
   const value = changes.value;
@@ -262,7 +262,7 @@ app.post("/webhook", async (req, res) => {
 
   // Handle spam protection
   const isBlocked = await handleSpamProtection(businessPhoneNumberId, userPhoneNumber);
-  console.log("ISBLOCKED? == ",isBlocked);
+  console.log("ISBLOCKED? == ", isBlocked);
   if (isBlocked) {
     return res.sendStatus(200); // Respond with 200 OK if the user is blocked
   }
@@ -444,7 +444,8 @@ app.post("/webhook", async (req, res) => {
           ...sessionStatus[userPhoneNumber],
           lastActive: Date.now(),
           optionSession: "0"
-        };      }
+        };
+      }
       await sendWhatsAppMessage(businessPhoneNumberId, userPhoneNumber, responseText);
       if (!isBroadcast) {
         console.log("isBROADCAST == ", isBroadcast);

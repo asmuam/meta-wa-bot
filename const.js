@@ -22,7 +22,7 @@ export const optionTwo = "Kirim Pertanyaan Seputar Statistik Secara Umum: "
 export const optionThree = "Kirim Pertanyaan Untuk AI: "
 export const optionfour = "Tunggu Beberapa Saat, Kami Sedang Menghubungi Pegawai Yang Bertugas."
 export const validOptions = ["0", "1", "2", "3", "4"];
-export const { WEBHOOK_VERIFY_TOKEN, GRAPH_API_TOKEN, PORT } = process.env;
+export const { WEBHOOK_VERIFY_TOKEN, GRAPH_API_TOKEN, PORT, PINECONE_API_KEY } = process.env;
 
 /** Objek untuk melacak status sesi pengguna
  * sessionStatus[userPhoneNumber]={lastActive: Date, optionSession: null, businessPhoneNumberId: required, pegawaiPhoneNumber: null}
