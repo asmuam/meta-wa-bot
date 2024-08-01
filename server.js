@@ -287,7 +287,6 @@ APP.post("/webhook", async (req, res) => {
   const statuses = value.statuses?.[0]; // Mengambil status pertama dari nilai
   const errors = value.errors?.[0]; // Mengambil error pertama dari nilai
   const messageTimestamp = messages?.timestamp; // Mengambil timestamp pesan
-  const statusTimestamp = statuses?.timestamp; // Mengambil timestamp status
   const userPhoneNumber = messages?.from || statuses?.recipient_id; // Mengambil nomor telepon pengguna bot dari pesan atau status
   const isBlocked = await handleSpamProtection(businessPhoneNumberId, userPhoneNumber, messages);
   let responseText = "";
