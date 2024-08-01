@@ -2,6 +2,10 @@
 import { GoogleGenerativeAI, HarmBlockThreshold, HarmCategory } from "@google/generative-ai";
 import { sourcePDF } from "./pdf.js";
 import nlp from 'compromise';
+import natural from 'natural';
+import fs from 'fs';
+
+const tokenizer = new natural.SentenceTokenizer();
 
 /**
  * Find sentences containing specific keywords or phrases along with contextual sentences.
@@ -10,47 +14,54 @@ import nlp from 'compromise';
  * @returns {string[]} - An array of sentences with the keyword-containing sentence appropriately positioned.
  */
 function findSentencesWithKeyword(text, phrase) {
-  // Use compromise to process the text and split into sentences
-  const doc = nlp(text);
-  const sentences = doc.sentences().out('array');
+  // Tokenisasi teks menjadi kalimat
+  const sentences = tokenizer.tokenize(text);
 
-  // Prepare keywords and phrases for search
+  // Tokenisasi frasa menjadi kata-kata
   const keywords = phrase.toLowerCase().split(' ');
-  const keywordSet = new Set(keywords); // To prevent duplicate words
+  const keywordSet = new Set(keywords); // Untuk mencegah kata duplikat
 
-  // Find the index of the sentence containing the most keywords
-  let maxKeywordCount = 0;
-  let keywordIndex = -1;
-
-  sentences.forEach((sentence, index) => {
-    const sentenceWords = sentence.toLowerCase().split(' ');
+  // Temukan kalimat yang mengandung kata kunci dan hitung kemiripan
+  const sentenceMatches = sentences.map((sentence, index) => {
+    const sentenceWords = sentence.toLowerCase().split(/\s+/);
     const matchCount = sentenceWords.filter(word => keywordSet.has(word)).length;
-    if (matchCount > maxKeywordCount) {
-      maxKeywordCount = matchCount;
-      keywordIndex = index;
+    return { index, sentence, matchCount };
+  });
+
+  // Urutkan kalimat berdasarkan jumlah kecocokan, dari yang tertinggi ke terendah
+  sentenceMatches.sort((a, b) => b.matchCount - a.matchCount);
+
+  // Ambil 20 kalimat teratas
+  const topMatches = sentenceMatches.slice(0, 21);
+
+  // Menentukan jumlah kalimat kontekstual untuk disertakan
+  const contextRange = 11;
+
+  // Menentukan indeks kalimat yang relevan
+  const relevantIndices = new Set(topMatches.map(match => match.index));
+
+  // Mengumpulkan kalimat kontekstual di sekitar kalimat yang relevan
+  const resultSet = new Set();
+  topMatches.forEach(({ index }) => {
+    const start = Math.max(index - contextRange, 0);
+    const end = Math.min(index + contextRange + 1, sentences.length);
+    for (let i = start; i < end; i++) {
+      resultSet.add(i);
     }
   });
 
-  // If no keywords are found, return an empty array
-  if (keywordIndex === -1) return [];
-
-  // Determine the number of contextual sentences to include based on the number of keywords
-  let contextRange = 2; // Default context range for multi-word phrases
-  if (keywords.length === 1) {
-    contextRange = 0; // No context for single-word keyword
-  } else if (keywords.length === 2) {
-    contextRange = 2; // Include 2 sentences on either side for two-word phrases
-  }
-
-  // Determine the start and end indices to get the context
-  const start = Math.max(keywordIndex - contextRange, 0);
-  const end = Math.min(keywordIndex + contextRange + 1, sentences.length);
-
-  // Extract the sentences around the keyword-containing sentence
-  const result = sentences.slice(start, end);
+  // Mengurutkan hasil berdasarkan urutan kemunculan asli dan menghapus duplikat
+  const result = Array.from(resultSet)
+    .sort((a, b) => a - b)
+    .map(i => sentences[i])
+    .filter((item, pos, self) => self.indexOf(item) === pos); // Hapus duplikat
 
   return result;
 }
+
+// Load JSON data from file
+const data = JSON.parse(fs.readFileSync('./data.js', 'utf8'));
+
 
 // Function to handle Gemini response
 export async function handleGeminiResponse(userPrompt) {
@@ -73,18 +84,33 @@ export async function handleGeminiResponse(userPrompt) {
     ],
   });
 
-  const passage = findSentencesWithKeyword(sourcePDF, userPrompt);
+  // Process each document and generate the result
+  const passage = data.map(doc => {
+    const { sumber, extractedtext } = doc;
+    const sentences = findSentencesWithKeyword(extractedtext, userPrompt);
+    return `sumber = ${sumber}\npassage= ${sentences.join('\n')}\n`;
+  }).join('');
+
   console.log(passage);
 
   // Create a prompt
-  const prompt = `Anda adalah seorang perwakilan yang berpengetahuan dan membantu dari Badan Pusat Statistik (BPS) yang memberikan data dan informasi kepada pengguna. Tujuan Anda adalah untuk menjawab pertanyaan menggunakan teks dari kutipan referensi di bawah ini. Pastikan jawaban Anda komprehensif, mudah dipahami, dan menghindari jargon teknis sebisa mungkin. Gunakan nada yang ramah dan percakapan, dan pecahkan konsep-konsep yang kompleks menjadi informasi yang sederhana dan mudah dicerna. Gunakan hanya kutipan referensi yang diberikan untuk jawaban Anda!. Jika kutipan tersebut tidak mengandung informasi yang relevan untuk jawaban, Anda boleh mengabaikannya. dan perlu diingat tidak perlu bertele-tele. langsung saja ke jawaban dari pertanyaannya\n\nPERTANYAAN: '${userPrompt}'\nKUTIPAN: '${passage}'\n\nJAWABAN:`;
+  const prompt = `Anda adalah seorang perwakilan yang berpengetahuan dan membantu dari Badan Pusat Statistik (BPS)
+   Kabupaten Boyolali yang memberikan data dan informasi kepada pengguna terutama terkait statistik khusunya statistik 
+   boyolali. Tujuan Anda adalah untuk menjawab pertanyaan menggunakan bantuan teks dari data referensi di bawah ini. 
+   Pastikan jawaban Anda komprehensif, mudah dipahami, dan menghindari jargon teknis sebisa mungkin. 
+   Gunakan nada yang ramah dan percakapan, dan pecahkan konsep-konsep yang kompleks menjadi informasi yang 
+   sederhana dan mudah dicerna. Gunakan referensi data dibawah sebagai alat bantu selain pengetahuanmu sendiri!. 
+   Jika data tersebut tidak mengandung informasi yang relevan untuk jawaban, Anda boleh mengabaikannya dan menjawab sesuai pengetahuannmu. 
+   sebisa mungkin format jawaban sebagai berikut 1. salam pembuka singkat 2.sumber data jika merupakan 
+   angka/metode/hasil analisis atau yang terkait dengan hasil statistik, jika bukan cukup jawab langsung saja.
+    berikut pertanyaan dan referensi bantuan yg mungkin dibutuhkan.\n\nPERTANYAAN: '${userPrompt}'\data tambahan: '${passage}'\n\nJAWABAN:`;
 
   let geminiResponse = "";
 
   try {
     const result = await model.generateContent(prompt);
     geminiResponse = result.response.text();
-    return `${geminiResponse}\n*Disclaimer*: Jawaban ini dihasilkan oleh AI Gemini.\n\nKetik *0* untuk kembali ke menu awal.`;
+    return `${geminiResponse}\n*Disclaimer*: Jawaban ini dihasilkan oleh AI Gemini sehingga terdapat kemungkinan untuk salah.\nKunjungi https://boyolalikab.bps.go.id/ untuk mencari informasi yang lebih tepat \n\nKetik *0* untuk kembali ke menu awal.`;
   } catch (error) {
     console.error("Error generating Gemini response:", error);
     return "Maaf, terjadi kesalahan saat memproses permintaan Anda.";

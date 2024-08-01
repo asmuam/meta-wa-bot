@@ -20,7 +20,8 @@
     "express": "^4.19.2",
     "nodemon": "^3.1.4",
     "raw-body": "^2.5.2",
-    "compromise":"13.1.1"
+    "compromise":"13.1.1",
+    "natural":"7.1.0"
   },
   "engines": {
     "node": ">=18.0.0"

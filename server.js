@@ -405,7 +405,7 @@ APP.post("/webhook", async (req, res) => {
     const userMessage = messages.text.body.trim().toLowerCase();
     const isValidOption = VALID_OPTIONS.includes(userMessage);
     const { optionSession } = SESSION_STATUS[userPhoneNumber];
-
+    SESSION_STATUS[userPhoneNumber].lastActive = Date.now();
     // Handle returning to the home menu
     if (userMessage === "0") {
       SESSION_STATUS[userPhoneNumber] = {
