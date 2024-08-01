@@ -1,0 +1,34 @@
+-pengguna bot punya 2 webhook (value-messages & value-statuses)
+-pegawai punya 2 webhook (value-messages & value-statuses)
+-untuk value-statuses langsung respon dgn res.sendStatus(200)
+-messages pertama dari pengguna bot (ditandai dengan tidak adanya sesi dari pengguna di variabel session) dibalas dengan homemessage
+-semua messages dengan type selain "text" dibalas dengan unsupportedTypeMessage
+-messages pertama dari pegawai jika merupakan interactive.button_reply maka akan mengubah variabel nomorpegawai pada sesi suatu pengguna bot dengan nomor pegawai tsb
+selain itu anggap pegawai adalah pengguna bot biasa
+-selama dalam sesi, jika "0" merupakan perintah untuk kembali ke menu,1/2/3/4 sesuai opsi
+-masukkan opsi tsb ke dalam sesi pengguna bot dan tdk diubah sebelum pengguna bot mengetik perintah "0" atau jika sesi berakhir
+-ketika opsi dalam sesi pengguna ada dan bernilai 1/2/3/4 handle pesan masuk dengan handler yang sesuai
+-jika value berisi errors maka LOG kan
+
+json webhook
+{
+  "object": "whatsapp_business_account",
+  "entry": [{
+    "id": "WHATSAPP-BUSINESS-ACCOUNT-ID",
+    "changes": [{
+      "value": {
+         "messaging_product": "whatsapp",
+         "metadata": {
+           "display_phone_number": "PHONE-NUMBER",
+           "phone_number_id": "PHONE-NUMBER-ID"
+         },
+      # Additional arrays and objects
+         "contacts": [{...}]
+         "errors": [{...}]
+         "messages": [{...}]
+         "statuses": [{...}]
+      },
+      "field": "messages"
+    }]
+  }]
+}

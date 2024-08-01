@@ -2,43 +2,50 @@ import dotenv from 'dotenv';
 import express from 'express';
 
 dotenv.config();
-export const app = express();
-const welcomeMessage = 
-"Selamat Datang di BPS Boyolali Bot"
-const menuMessage = 
-"\n\nKetik *1* untuk bertanya statistik Boyolali\n"+
-"Ketik *2* untuk bertanya statistik secara umum\n"+
-"Ketik *3* untuk bertanya AI\n"+
-"Ketik *4* untuk bertanya dengan CS\n\n"+
-"📷 *Instagram* : https://www.instagram.com/bpskabboyolali/\n"+
-"🎥 *YouTube* : https://www.youtube.com/@BPSKabupatenBoyolali"
-export const unsupportedType = "Mohon Maaf. Kami Hanya Mendukung percakapan berbasis teks."
-export const homeMessage = welcomeMessage+menuMessage 
-export const backOnline = 'Bot telah kembali!';
-export const wrongCommand = "Mohon Maaf. Silahkan Pilih Opsi Berikut Untuk Melanjutkan\n\n"
-export const backToMenu = "\n\nKetik 0 untuk kembali ke menu awal."
-export const optionOne = "Kirim Pertanyaan Seputar Statistik Boyolali: "
-export const optionTwo = "Kirim Pertanyaan Seputar Statistik Secara Umum: "
-export const optionThree = "Kirim Pertanyaan Untuk AI: "
-export const optionfour = "Tunggu Beberapa Saat, Kami Sedang Menghubungi Pegawai Yang Bertugas."
-export const validOptions = ["0", "1", "2", "3", "4"];
-export const { WEBHOOK_VERIFY_TOKEN, GRAPH_API_TOKEN, PORT, PINECONE_API_KEY } = process.env;
+export const APP = express();
 
-/** Objek untuk melacak status sesi pengguna
- * sessionStatus[userPhoneNumber]={lastActive: Date, optionSession: null, businessPhoneNumberId: required, pegawaiPhoneNumber: null}
+const WELCOME_MESSAGE = 
+"SELAMAT DATANG DI BPS BOYOLALI BOT";
+const MENU_MESSAGE = 
+"\n\nKETIK *1* UNTUK BERTANYA STATISTIK BOYOLALI\n"+
+"KETIK *2* UNTUK BERTANYA STATISTIK SECARA UMUM\n"+
+"KETIK *3* UNTUK BERTANYA AI\n"+
+"KETIK *4* UNTUK BERTANYA DENGAN CS\n\n"+
+"📷 *INSTAGRAM* : https://www.instagram.com/bpskabboyolali/\n"+
+"🎥 *YOUTUBE* : https://www.youtube.com/@BPSKabupatenBoyolali";
+export const UNSUPPORTED_TYPE_MESSAGE = "MOHON MAAF. KAMI HANYA MENDUKUNG PERCAPAKAN BERBASIS TEKS.";
+export const HOME_MESSAGE = WELCOME_MESSAGE + MENU_MESSAGE;
+export const BACK_ONLINE = 'BOT TELAH KEMBALI!';
+export const WRONG_COMMAND = "MOHON MAAF. SILAHKAN PILIH OPSI BERIKUT UNTUK MELANJUTKAN\n\n";
+export const BACK_TO_MENU = "\n\nKETIK 0 UNTUK KEMBALI KE MENU AWAL.";
+export const OPTION_ONE = "KIRIM PERTANYAAN SEPUTAR STATISTIK BOYOLALI: ";
+export const OPTION_TWO = "KIRIM PERTANYAAN SEPUTAR STATISTIK SECARA UMUM: ";
+export const OPTION_THREE = "KIRIM PERTANYAAN UNTUK AI: ";
+export const OPTION_FOUR = "TUNGGU BEBERAPA SAAT, KAMI SEDANG MENGHUBUNGI PEGAWAI YANG BERTUGAS.";
+export const VALID_OPTIONS = ["1", "2", "3", "4"];
+export const { WEBHOOK_VERIFY_TOKEN, GRAPH_API_TOKEN, PORT } = process.env;
+
+/** OBJEK UNTUK MELACAK STATUS SESI PENGGUNA
+ * SESSION_STATUS[USER_PHONE_NUMBER]={LAST_ACTIVE: DATE, OPTION_SESSION: NULL, BUSINESS_PHONE_NUMBER_ID: REQUIRED, PEGAWAI_PHONE_NUMBER: NULL}
  */
-export const sessionStatus = {};
+export const SESSION_STATUS = {};
 
-// daftar nomor pegawai
+// DAFTAR NOMOR PEGAWAI
 const PEGAWAI_NUMBER_JSON = process.env.PEGAWAI_NUMBER;
 export const PEGAWAI_NUMBERS = JSON.parse(PEGAWAI_NUMBER_JSON);
-export const broadcastPegawai = 
-"Terdapat Responden yang meminta Asistensi!\n\n"+
-"Klik *Mulai Sesi!* untuk memulai sesi"
+export const BROADCAST_PEGAWAI = 
+"TERDAPAT RESPONDEN YANG MEMINTA ASISTENSI!\n\n"+
+"KLIK *MULAI SESI!* UNTUK MEMULAI SESI";
 
-export const connectedWithPegawai = 
-"Anda Telah Terhubung Dengan Admin!~"
+export const CONNECTED_WITH_PEGAWAI = 
+"ANDA TELAH TERHUBUNG DENGAN ADMIN!~";
 
-export const SESSION_LIMIT = 180000 // 3 menit (milisecond)
+export const SESSION_LIMIT = 180000; // 3 MENIT (MILISEKON)
 
-export const noAvailablePegawai = "Maaf, saat ini tidak ada pegawai yang tersedia. Coba beberapa saat lagi"
+export const NO_AVAILABLE_PEGAWAI = "MAAF, SAAT INI TIDAK ADA PEGAWAI YANG TERSEDIA. COBA BEBERAPA SAAT LAGI";
+export const SESSION_QNA_EXPIRED_MESSAGE = "SESI QNA TELAH DITUTUP";
+export const SESSION_EXPIRED_MESSAGE = "SESI ANDA TELAH BERAKHIR. SILAHKAN KIRIM PESAN LAGI UNTUK MEMULAI SESI BARU.";
+export const MAX_MESSAGES_PER_MINUTE = 30; // Set the maximum number of messages allowed per minute
+export const SPAM_THRESHOLD = 1; // Set the number of warnings before blocking
+
+export const BOT_ERROR = "MAAF, BOT SEDANG BERMASALAH. KAMI SEDANG BERUPAYA SEBAIK MUNGKIN."
