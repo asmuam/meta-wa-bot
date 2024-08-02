@@ -8,20 +8,22 @@
     "start": "concurrently \"node server.js\" \"ssh -R kiagengboyolali:80:localhost:3000 serveo.net\"",
     "dev:serveo": "concurrently \"nodemon server.js\" \"ssh -R kiagengboyolali:80:localhost:3000 serveo.net\"",
     "dev:localtunnel": "concurrently \"nodemon server.js\" \"lt --port 3000\"",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "dev:wpp": "node server-wpp.js"
   },
   "author": "WhatsApp Team",
   "license": "MIT",
   "dependencies": {
     "@google/generative-ai": "^0.16.0",
     "axios": "^1.7.2",
+    "compromise": "13.1.1",
     "concurrently": "^8.2.2",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
+    "natural": "7.1.0",
     "nodemon": "^3.1.4",
     "raw-body": "^2.5.2",
-    "compromise":"13.1.1",
-    "natural":"7.1.0"
+    "@wppconnect-team/wppconnect":"*"
   },
   "engines": {
     "node": ">=18.0.0"

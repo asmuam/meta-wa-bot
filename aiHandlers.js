@@ -1,62 +1,80 @@
 // gemini.js
 import { GoogleGenerativeAI, HarmBlockThreshold, HarmCategory } from "@google/generative-ai";
-import { sourcePDF } from "./pdf.js";
-import nlp from 'compromise';
-import natural from 'natural';
 import fs from 'fs';
-
-const tokenizer = new natural.SentenceTokenizer();
+import natural from 'natural';
 
 /**
- * Find sentences containing specific keywords or phrases along with contextual sentences.
- * @param {string} text - The text to search within.
- * @param {string} phrase - The keyword or phrase to search for.
- * @returns {string[]} - An array of sentences with the keyword-containing sentence appropriately positioned.
+ * Filter out short words from a string.
+ * @param {string} str - The string to process.
+ * @param {number} minLength - The minimum length of words to keep.
+ * @returns {string} - The string with short words removed.
  */
+function filterShortWords(str, minLength) {
+  return str
+      .split(' ')
+      .filter(word => word.length > minLength)
+      .join(' ');
+}
+
+/**
+* Find sentences containing specific keywords or phrases along with contextual sentences.
+* @param {string} text - The text to search within.
+* @param {string} phrase - The keyword or phrase to search for.
+* @returns {string[]} - An array of sentences with the keyword-containing sentence appropriately positioned.
+*/
 function findSentencesWithKeyword(text, phrase) {
-  // Tokenisasi teks menjadi kalimat
+  // Filter out short words from the phrase
+  const filteredPhrase = filterShortWords(phrase, 2);
+  
+  if (!filteredPhrase) {
+      return [];
+  }
+
+  const tokenizer = new natural.SentenceTokenizer();
   const sentences = tokenizer.tokenize(text);
+  const tfidf = new natural.TfIdf();
 
-  // Tokenisasi frasa menjadi kata-kata
-  const keywords = phrase.toLowerCase().split(' ');
-  const keywordSet = new Set(keywords); // Untuk mencegah kata duplikat
-
-  // Temukan kalimat yang mengandung kata kunci dan hitung kemiripan
-  const sentenceMatches = sentences.map((sentence, index) => {
-    const sentenceWords = sentence.toLowerCase().split(/\s+/);
-    const matchCount = sentenceWords.filter(word => keywordSet.has(word)).length;
-    return { index, sentence, matchCount };
+  // Filter out short words from each sentence before adding to TfIdf instance
+  sentences.forEach(sentence => {
+      const filteredSentence = filterShortWords(sentence, 2);
+      tfidf.addDocument(filteredSentence);
   });
 
-  // Urutkan kalimat berdasarkan jumlah kecocokan, dari yang tertinggi ke terendah
-  sentenceMatches.sort((a, b) => b.matchCount - a.matchCount);
+  const results = [];
+  let contextStartIndex = null;
+  let contextEndIndex = null;
+  let currentContext = [];
 
-  // Ambil 20 kalimat teratas
-  const topMatches = sentenceMatches.slice(0, 21);
+  // Calculate the TfIdf measure for each sentence
+  tfidf.tfidfs(filteredPhrase, (i, measure) => {
+      if (measure > 0) {
+          if (contextStartIndex === null) {
+              contextStartIndex = Math.max(0, i - 1);
+          }
+          contextEndIndex = Math.min(sentences.length - 1, i + 1);
 
-  // Menentukan jumlah kalimat kontekstual untuk disertakan
-  const contextRange = 11;
+          // Check if the next sentence also contains the phrase to extend the context
+          if (i < sentences.length - 1 && tfidf.tfidf(filteredPhrase, i + 1) > 0) {
+              return;
+          }
 
-  // Menentukan indeks kalimat yang relevan
-  const relevantIndices = new Set(topMatches.map(match => match.index));
+          // Collect the context sentences
+          currentContext.push(...sentences.slice(contextStartIndex, contextEndIndex + 1));
 
-  // Mengumpulkan kalimat kontekstual di sekitar kalimat yang relevan
-  const resultSet = new Set();
-  topMatches.forEach(({ index }) => {
-    const start = Math.max(index - contextRange, 0);
-    const end = Math.min(index + contextRange + 1, sentences.length);
-    for (let i = start; i < end; i++) {
-      resultSet.add(i);
-    }
+          // Filter duplicates and maintain order
+          currentContext = Array.from(new Set(currentContext));
+
+          // Add current context to results
+          results.push(currentContext.join(' '));
+
+          // Reset for the next context
+          contextStartIndex = null;
+          contextEndIndex = null;
+          currentContext = [];
+      }
   });
 
-  // Mengurutkan hasil berdasarkan urutan kemunculan asli dan menghapus duplikat
-  const result = Array.from(resultSet)
-    .sort((a, b) => a - b)
-    .map(i => sentences[i])
-    .filter((item, pos, self) => self.indexOf(item) === pos); // Hapus duplikat
-
-  return result;
+  return results;
 }
 
 // Load JSON data from file
@@ -102,8 +120,8 @@ export async function handleGeminiResponse(userPrompt) {
    sederhana dan mudah dicerna. Gunakan referensi data dibawah sebagai alat bantu selain pengetahuanmu sendiri!. 
    Jika data tersebut tidak mengandung informasi yang relevan untuk jawaban, Anda boleh mengabaikannya dan menjawab sesuai pengetahuannmu. 
    sebisa mungkin format jawaban sebagai berikut 1. salam pembuka singkat 2.sumber data jika merupakan 
-   angka/metode/hasil analisis atau yang terkait dengan hasil statistik, jika bukan cukup jawab langsung saja.
-    berikut pertanyaan dan referensi bantuan yg mungkin dibutuhkan.\n\nPERTANYAAN: '${userPrompt}'\data tambahan: '${passage}'\n\nJAWABAN:`;
+   angka/metode/hasil analisis atau yang terkait dengan hasil statistik, jika bukan cukup jawab langsung saja. jangan bilang bahwa data tambahan ini dari penanya. data tambahan tsb adalah data anda sendiri.
+   berikut pertanyaan dan referensi bantuan yg mungkin dibutuhkan.\n\nPERTANYAAN: '${userPrompt}'\data tambahan: '${passage}'\n\nJAWABAN:`;
 
   let geminiResponse = "";
 

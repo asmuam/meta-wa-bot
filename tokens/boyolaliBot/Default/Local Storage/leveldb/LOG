@@ -1,0 +1,13 @@
+2024/08/02-16:36:52.598 9f8 Reusing MANIFEST D:\STIS\Magang\bot_wa_js\tokens\boyolaliBot\Default\Local Storage\leveldb/MANIFEST-000001
+2024/08/02-16:36:52.605 9f8 Recovering log #9
+2024/08/02-16:36:52.606 9f8 Level-0 table #12: started
+2024/08/02-16:36:52.617 9f8 Level-0 table #12: 17791 bytes OK
+2024/08/02-16:36:52.629 9f8 Delete type=0 #9
+2024/08/02-16:36:52.630 84ec Compacting 4@0 + 0@1 files
+2024/08/02-16:36:52.643 84ec Generated table #14@0: 96 keys, 10882 bytes
+2024/08/02-16:36:52.643 84ec Compacted 4@0 + 0@1 files => 10882 bytes
+2024/08/02-16:36:52.644 84ec compacted to: files[ 0 1 0 0 0 0 0 ]
+2024/08/02-16:36:52.647 84ec Delete type=2 #3
+2024/08/02-16:36:52.647 84ec Delete type=2 #6
+2024/08/02-16:36:52.648 84ec Delete type=2 #10
+2024/08/02-16:36:52.648 84ec Delete type=2 #12
