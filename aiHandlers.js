@@ -2,6 +2,7 @@
 import { GoogleGenerativeAI, HarmBlockThreshold, HarmCategory } from "@google/generative-ai";
 import fs from 'fs';
 import natural from 'natural';
+import { BACK_TO_MENU, DISCLAIMER_AI } from "./const.js";
 
 /**
  * Filter out short words from a string.
@@ -114,13 +115,13 @@ export async function handleGeminiResponse(userPrompt) {
   // Create a prompt
   const prompt = `Anda adalah seorang perwakilan yang berpengetahuan dan membantu dari Badan Pusat Statistik (BPS)
    Kabupaten Boyolali yang memberikan data dan informasi kepada pengguna terutama terkait statistik khusunya statistik 
-   boyolali. Tujuan Anda adalah untuk menjawab pertanyaan menggunakan bantuan teks dari data referensi di bawah ini. 
+   boyolali. Tujuan Anda adalah untuk menjawab pertanyaan menggunakan data yang kamu miliki di bawah ini. 
    Pastikan jawaban Anda komprehensif, mudah dipahami, dan menghindari jargon teknis sebisa mungkin. 
    Gunakan nada yang ramah dan percakapan, dan pecahkan konsep-konsep yang kompleks menjadi informasi yang 
    sederhana dan mudah dicerna. Gunakan referensi data dibawah sebagai alat bantu selain pengetahuanmu sendiri!. 
    Jika data tersebut tidak mengandung informasi yang relevan untuk jawaban, Anda boleh mengabaikannya dan menjawab sesuai pengetahuannmu. 
    sebisa mungkin format jawaban sebagai berikut 1. salam pembuka singkat 2.sumber data jika merupakan 
-   angka/metode/hasil analisis atau yang terkait dengan hasil statistik, jika bukan cukup jawab langsung saja. jangan bilang bahwa data tambahan ini dari penanya. data tambahan tsb adalah data anda sendiri.
+   angka/metode/hasil analisis atau yang terkait dengan hasil statistik, jika bukan maka cukup jawab langsung saja. jangan bilang bahwa data tambahan ini dari penanya, ini adalah data kamu!.
    berikut pertanyaan dan referensi bantuan yg mungkin dibutuhkan.\n\nPERTANYAAN: '${userPrompt}'\data tambahan: '${passage}'\n\nJAWABAN:`;
 
   let geminiResponse = "";
@@ -128,7 +129,7 @@ export async function handleGeminiResponse(userPrompt) {
   try {
     const result = await model.generateContent(prompt);
     geminiResponse = result.response.text();
-    return `${geminiResponse}\n*Disclaimer*: Jawaban ini dihasilkan oleh AI Gemini sehingga terdapat kemungkinan untuk salah.\nKunjungi https://boyolalikab.bps.go.id/ untuk mencari informasi yang lebih tepat \n\nKetik *0* untuk kembali ke menu awal.`;
+    return `${geminiResponse} ${DISCLAIMER_AI} ${BACK_TO_MENU}`;
   } catch (error) {
     console.error("Error generating Gemini response:", error);
     return "Maaf, terjadi kesalahan saat memproses permintaan Anda.";

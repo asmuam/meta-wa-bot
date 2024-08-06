@@ -15,7 +15,7 @@
  * along with WPPConnect.  If not, see <https://www.gnu.org/licenses/>.
  */
 import wppconnect from "@wppconnect-team/wppconnect";
-import { MAX_MESSAGES_PER_MINUTE, SPAM_THRESHOLD, HOME_MESSAGE, BACK_ONLINE, WRONG_COMMAND, OPTION_ONE, BACK_TO_MENU, OPTION_TWO, OPTION_THREE, OPTION_FOUR, APP, VALID_OPTIONS, WEBHOOK_VERIFY_TOKEN, GRAPH_API_TOKEN, PORT, SESSION_STATUS, PEGAWAI_NUMBERS, CONNECTED_WITH_PEGAWAI, SESSION_LIMIT, NO_AVAILABLE_PEGAWAI, UNSUPPORTED_TYPE_MESSAGE, SESSION_EXPIRED_MESSAGE, SESSION_QNA_EXPIRED_MESSAGE, BOT_ERROR } from "./const.js";
+import { MAX_MESSAGES_PER_MINUTE, SPAM_THRESHOLD, HOME_MESSAGE, BACK_ONLINE, WRONG_COMMAND, OPTION_ONE, BACK_TO_MENU, OPTION_TWO, OPTION_THREE, OPTION_FOUR, APP, VALID_OPTIONS, WEBHOOK_VERIFY_TOKEN, GRAPH_API_TOKEN, PORT, SESSION_STATUS, PEGAWAI_NUMBERS, CONNECTED_WITH_PEGAWAI, SESSION_LIMIT, NO_AVAILABLE_PEGAWAI, UNSUPPORTED_TYPE_MESSAGE, SESSION_EXPIRED_MESSAGE, SESSION_QNA_EXPIRED_MESSAGE, BOT_ERROR, BOT_NUMBER, BOT_NAME, MENU_STRUCTURE } from "./const.js";
 import { isPegawaiPhoneNumberInSession } from "./func.js";
 import { handleStatBoy, handleStatGen } from "./statsHandlers.js";
 import { handleGeminiResponse } from "./aiHandlers.js";
@@ -31,11 +31,73 @@ let serverOnlineTime = 0;
 let repliedUsers = {};
 let userActivity = {}; // To track user activity and warnings
 
+/**
+ * Menangani kedaluwarsa sesi untuk penerima tertentu.
+ * Menghapus status sesi dari objek SESSION_STATUS dan mengirim pesan pemberitahuan sesi kedaluwarsa melalui WhatsApp.
+ *
+ * @async
+ * @function
+ * @name handleSessionExpiration
+ * 
+ * @param {string} business_phone_number_id - ID nomor telepon bisnis yang digunakan untuk mengirim pesan.
+ * @param {string} recipient - Penerima yang sesi-nya telah berakhir.
+ *
+ * @example
+ * handleSessionExpiration('123456789', 'recipient123');
+ *
+ * @returns {Promise<void>}
+ */
+async function handleSessionExpiration(client, recipient) {
+
+    if (SESSION_STATUS[recipient]) {
+        await sendWhatsAppMessage(client, recipient, SESSION_EXPIRED_MESSAGE);
+        if (SESSION_STATUS[recipient].pegawaiPhoneNumber) {
+            await sendWhatsAppMessage(client, SESSION_STATUS[recipient].pegawaiPhoneNumber, SESSION_QNA_EXPIRED_MESSAGE);
+            availablePegawai.push(SESSION_STATUS[recipient].pegawaiPhoneNumber);
+        }
+    }
+    delete SESSION_STATUS[recipient];
+}
+
+/**
+ * Memeriksa kedaluwarsa sesi untuk setiap penerima dalam objek SESSION_STATUS.
+ * Jika sesi telah tidak aktif selama lebih dari 3 menit (180000 ms), sesi akan dianggap kedaluwarsa dan
+ * fungsi handleSessionExpiration akan dipanggil untuk menangani kedaluwarsa sesi tersebut.
+ *
+ * @function
+ * @name checkSessionExpiration
+ *
+ * @example
+ * checkSessionExpiration();
+ *
+ * @returns {void}
+ */
+function checkSessionExpiration() {
+    const currentTime = Date.now();
+    for (const recipient in SESSION_STATUS) {
+        if ((currentTime - SESSION_STATUS[recipient].lastActive) > SESSION_LIMIT) {
+            handleSessionExpiration(SESSION_STATUS[recipient].client, recipient);
+        }
+    }
+}
+
+
+/**
+ * Memanggil fungsi checkSessionExpiration setiap 60 detik (60000 ms) untuk memeriksa dan menangani
+ * kedaluwarsa sesi secara berkala.
+ *
+ * @example
+ * setInterval(checkSessionExpiration, 60000);
+ *
+ * @returns {void}
+ */
+setInterval(checkSessionExpiration, 60000);
+
 
 wppconnect
     .create({
-        session: 'boyolaliBot', //Pass the name of the client you want to start the bot
-        phoneNumber: '6285163513267',
+        session: BOT_NAME, //Pass the name of the client you want to start the bot
+        phoneNumber: BOT_NUMBER,
         catchLinkCode: (str) => console.log('Code: ' + str),
     })
     .then((client) => start(client))
@@ -46,9 +108,9 @@ async function start(client) {
         if (message.isGroupMsg) {
             return
         }
-        console.log("client == ", client);
-        console.log("message == ", message);
-        console.log("session == ", SESSION_STATUS);
+        // console.log("client == ", client);
+        // console.log("message == ", message);
+        // console.log("session == ", SESSION_STATUS);
         const userPhoneNumber = message.from;
         const botPhoneNumber = message.to;
         const messageTimestamp = message.timestamp;
@@ -58,9 +120,9 @@ async function start(client) {
         let isBroadcast = false; // Default to false unless a broadcast is initiated
 
         // Handle spam protection
-        if (isBlocked) {
-            return;
-        }
+        // if (isBlocked) {
+        //     return;
+        // }
 
         // Handle button replies
         if (message.type === 'button_reply') {
@@ -94,11 +156,10 @@ async function start(client) {
 
         // Handle text messages
         if (message.type === 'chat') {
-            await markMessageAsSeen(client, userPhoneNumber);
-
             // Handle unsupported message types
             if (message.type !== 'chat') {
                 await sendWhatsAppMessage(client, userPhoneNumber, UNSUPPORTED_TYPE_MESSAGE);
+                // unsupported types message but still not in session
                 if (!(SESSION_STATUS[userPhoneNumber])) {
                     await sendWhatsAppMessage(client, userPhoneNumber, HOME_MESSAGE);
                 }
@@ -119,7 +180,7 @@ async function start(client) {
                 await sendWhatsAppMessage(client, getUserPhoneNumberInSession(SESSION_STATUS, userPhoneNumber), responseText);
                 return;
             }
-            SESSION_STATUS[userPhoneNumber] = { lastActive: Date.now(), optionSession: "0", businessPhoneNumberId: botPhoneNumber };
+            SESSION_STATUS[userPhoneNumber] = { client: client, lastActive: Date.now(), optionSession: "0", businessPhoneNumberId: botPhoneNumber };
             await sendWhatsAppMessage(client, userPhoneNumber, HOME_MESSAGE);
             return;
         }
@@ -130,6 +191,11 @@ async function start(client) {
             const isValidOption = VALID_OPTIONS.includes(userMessage);
             const { optionSession } = SESSION_STATUS[userPhoneNumber];
             SESSION_STATUS[userPhoneNumber].lastActive = Date.now();
+            const currentMenu = MENU_STRUCTURE[SESSION_STATUS[userPhoneNumber].optionSession];
+
+            console.log("CURRENT MENU == ", currentMenu);
+            console.log("SESSION == ", SESSION_STATUS);
+            console.log("USER MESSAGE == ", userMessage);
 
             if (userMessage === "0") {
                 SESSION_STATUS[userPhoneNumber] = {
@@ -137,27 +203,35 @@ async function start(client) {
                     optionSession: "0",
                     businessPhoneNumberId: botPhoneNumber
                 };
-                responseText = HOME_MESSAGE;
+                responseText = MENU_STRUCTURE["0"].message;
             } else if (optionSession && optionSession != "0") {
-                if (optionSession === "1") {
-                    responseText = await handleStatBoy(userMessage);
-                } else if (optionSession === "2") {
-                    responseText = await handleStatGen(userMessage);
-                } else if (optionSession === "3") {
+                if (optionSession === "2") {
                     responseText = await handleGeminiResponse(userMessage);
-                } else if (optionSession === "4") {
+                }
+                if (optionSession === "3") {
                     await sendMessageToPegawai(client, SESSION_STATUS[userPhoneNumber].pegawaiPhoneNumber, userMessage, userPhoneNumber);
                     return;
                 }
+                if (currentMenu && currentMenu.options?.[`${SESSION_STATUS[userPhoneNumber]?.optionSession}.${userMessage}`]) {
+                    console.log("================");
+                    if (userMessage === "99") {
+                        SESSION_STATUS[userPhoneNumber].optionSession = SESSION_STATUS[userPhoneNumber].optionSession.split('.').slice(0, -1).join('.') || "0";
+                    } else {
+                        SESSION_STATUS[userPhoneNumber].optionSession = `${SESSION_STATUS[userPhoneNumber].optionSession}.${userMessage}`;
+                    }
+                    const newMenu = MENU_STRUCTURE[SESSION_STATUS[userPhoneNumber].optionSession];
+                    responseText = (newMenu ? newMenu.message : WRONG_COMMAND + MENU_STRUCTURE[SESSION_STATUS[userPhoneNumber].optionSession].message) + BACK_TO_MENU;
+                } else {
+                    responseText = WRONG_COMMAND + MENU_STRUCTURE[SESSION_STATUS[userPhoneNumber].optionSession].message + BACK_TO_MENU;
+                }
+
             } else if (isValidOption) {
                 SESSION_STATUS[userPhoneNumber].optionSession = userMessage;
                 if (userMessage === "1") {
-                    responseText = OPTION_ONE + BACK_TO_MENU;
+                    responseText = MENU_STRUCTURE[SESSION_STATUS[userPhoneNumber].optionSession].message + BACK_TO_MENU;
                 } else if (userMessage === "2") {
-                    responseText = OPTION_TWO + BACK_TO_MENU;
-                } else if (userMessage === "3") {
                     responseText = OPTION_THREE + BACK_TO_MENU;
-                } else if (userMessage === "4") {
+                } else if (userMessage === "3") {
                     responseText = OPTION_FOUR + BACK_TO_MENU;
                     isBroadcast = await pegawaiBroadcast(client, availablePegawai, userMessage, userPhoneNumber);
                 }
@@ -172,7 +246,7 @@ async function start(client) {
 
             await sendWhatsAppMessage(client, userPhoneNumber, responseText);
 
-            if (!isBroadcast && userMessage === "4") {
+            if (!isBroadcast && optionSession === "3") {
                 await sendWhatsAppMessage(client, userPhoneNumber, NO_AVAILABLE_PEGAWAI + HOME_MESSAGE);
                 SESSION_STATUS[userPhoneNumber] = {
                     ...SESSION_STATUS[userPhoneNumber],
@@ -188,14 +262,23 @@ async function start(client) {
 
 async function sendWhatsAppMessage(client, to, message) {
     try {
+        await markMessageAsSeen(client, to);
+
+        // Tunggu sejenak sebelum memulai "typing"
+        await new Promise(resolve => setTimeout(resolve, 2000)); // 3 detik, sesuaikan jika perlu
+
         await client.startTyping(to);
+
+        // Tunggu 2 detik sebelum mengirim pesan
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
         await client.sendText(to, message);
+
         await client.stopTyping(to);
     } catch (error) {
         console.error(`Failed to send message to ${to}:`, error.message);
     }
 }
-
 async function markMessageAsSeen(client, messageId) {
     try {
         await client.sendSeen(messageId);
