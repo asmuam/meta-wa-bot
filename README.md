@@ -29,8 +29,8 @@ This guide will walk you through the process of creating a WhatsApp bot using th
   - [Step 5: Learn about the API and Build Your App](#step-5-learn-about-the-api-and-build-your-app)
   - [Step 6: Integrate AI into the Application](#step-6-integrate-ai-into-the-application)
   - [Step 7: Add a Phone Number](#step-7-add-a-phone-number)
-  - [Datalumina](#datalumina)
-  - [Tutorials](#tutorials)
+  - [Problems](#problems)
+
 
 ## Get Started
 
@@ -172,3 +172,8 @@ When dealing with WhatsApp Business API and wanting to experiment without affect
 6. Dedicated Devices for Development
 
 **Recommendation**: If this is for a more prolonged or professional purpose, using a virtual phone number service or purchasing a new SIM card for a dedicated device is advisable. For quick tests, a temporary number might suffice, but always be cautious about security and privacy. Remember that once a number is associated with WhatsApp Business API, it cannot be used with regular WhatsApp on a device unless you deactivate it from the Business API and reverify it on the device.
+
+## Problems
+
+if you encounter problem kindly read any of these doc
+https://github.com/chroma-core/chroma/issues/189#issuecomment-1454418844 for issues related to chromadb

@@ -131,3 +131,6 @@ dist
 
 # wpp
 tokens/
+
+# chromadb
+chroma/

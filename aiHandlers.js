@@ -4,32 +4,20 @@ import fs from 'fs';
 import natural from 'natural';
 import { BACK_TO_MENU, DISCLAIMER_AI } from "./const.js";
 
-/**
- * Filter out short words from a string.
- * @param {string} str - The string to process.
- * @param {number} minLength - The minimum length of words to keep.
- * @returns {string} - The string with short words removed.
- */
+// Function to filter out short words and handle punctuation
 function filterShortWords(str, minLength) {
   return str
-      .split(' ')
-      .filter(word => word.length > minLength)
-      .join(' ');
+    .split(/\s+/)  // Split by any whitespace
+    .map(word => word.replace(/[.,!?;()]/g, ''))  // Remove punctuation
+    .filter(word => word.length > minLength)
+    .join(' ');
 }
 
-/**
-* Find sentences containing specific keywords or phrases along with contextual sentences.
-* @param {string} text - The text to search within.
-* @param {string} phrase - The keyword or phrase to search for.
-* @returns {string[]} - An array of sentences with the keyword-containing sentence appropriately positioned.
-*/
+// Function to find sentences with keyword using TF-IDF
 function findSentencesWithKeyword(text, phrase) {
-  // Filter out short words from the phrase
-  const filteredPhrase = filterShortWords(phrase, 2);
-  
-  if (!filteredPhrase) {
-      return [];
-  }
+  const filteredPhrase = filterShortWords(phrase, 1);
+
+  if (!filteredPhrase) return [];
 
   const tokenizer = new natural.SentenceTokenizer();
   const sentences = tokenizer.tokenize(text);
@@ -37,49 +25,49 @@ function findSentencesWithKeyword(text, phrase) {
 
   // Filter out short words from each sentence before adding to TfIdf instance
   sentences.forEach(sentence => {
-      const filteredSentence = filterShortWords(sentence, 2);
-      tfidf.addDocument(filteredSentence);
+    const filteredSentence = filterShortWords(sentence, 2);
+    tfidf.addDocument(filteredSentence);
   });
 
   const results = [];
-  let contextStartIndex = null;
-  let contextEndIndex = null;
-  let currentContext = [];
+  let contextSentences = [];
 
-  // Calculate the TfIdf measure for each sentence
+  // Calculate the TF-IDF measure for each sentence
   tfidf.tfidfs(filteredPhrase, (i, measure) => {
-      if (measure > 0) {
-          if (contextStartIndex === null) {
-              contextStartIndex = Math.max(0, i - 1);
-          }
-          contextEndIndex = Math.min(sentences.length - 1, i + 1);
+    if (measure > 0) {
+      contextSentences.push(...sentences.slice(Math.max(0, i - 1), Math.min(sentences.length, i + 2)));
 
-          // Check if the next sentence also contains the phrase to extend the context
-          if (i < sentences.length - 1 && tfidf.tfidf(filteredPhrase, i + 1) > 0) {
-              return;
-          }
+      // Remove duplicate sentences while maintaining order
+      contextSentences = [...new Set(contextSentences)];
 
-          // Collect the context sentences
-          currentContext.push(...sentences.slice(contextStartIndex, contextEndIndex + 1));
+      results.push({
+        index: i,
+        context: contextSentences.join(' ')
+      });
 
-          // Filter duplicates and maintain order
-          currentContext = Array.from(new Set(currentContext));
-
-          // Add current context to results
-          results.push(currentContext.join(' '));
-
-          // Reset for the next context
-          contextStartIndex = null;
-          contextEndIndex = null;
-          currentContext = [];
-      }
+      // Reset context for next phrase
+      contextSentences = [];
+    }
   });
 
-  return results;
+  // Optional: Deduplicate results if necessary
+  const uniqueResults = Array.from(new Set(results.map(res => res.context)))
+    .map(context => results.find(res => res.context === context));
+
+  return uniqueResults.map(result => result.context);
+}
+
+// Process each document and generate the result
+function processDocuments(data, userPrompt) {
+  return data.map(doc => {
+    const { sumber, extractedtext } = doc;
+    const sentences = findSentencesWithKeyword(extractedtext, userPrompt);
+    return `sumber = ${sumber}\npassage = ${sentences.join('\n')}\n`;
+  }).join('');
 }
 
 // Load JSON data from file
-const data = JSON.parse(fs.readFileSync('./data.js', 'utf8'));
+const data = JSON.parse(fs.readFileSync('./parsed_data_v1.js', 'utf8'));
 
 
 // Function to handle Gemini response
@@ -103,26 +91,21 @@ export async function handleGeminiResponse(userPrompt) {
     ],
   });
 
-  // Process each document and generate the result
-  const passage = data.map(doc => {
-    const { sumber, extractedtext } = doc;
-    const sentences = findSentencesWithKeyword(extractedtext, userPrompt);
-    return `sumber = ${sumber}\npassage= ${sentences.join('\n')}\n`;
-  }).join('');
 
+  const passage = processDocuments(data, userPrompt);
   console.log(passage);
-
+  
   // Create a prompt
   const prompt = `Anda adalah seorang perwakilan yang berpengetahuan dan membantu dari Badan Pusat Statistik (BPS)
-   Kabupaten Boyolali yang memberikan data dan informasi kepada pengguna terutama terkait statistik khusunya statistik 
-   boyolali. Tujuan Anda adalah untuk menjawab pertanyaan menggunakan data yang kamu miliki di bawah ini. INGAT! data dibawah merupakan data yang kamu miliki bukan data yang saya berikan ke kamu. 
-   Pastikan jawaban Anda komprehensif, mudah dipahami, dan menghindari jargon teknis sebisa mungkin. 
-   Gunakan nada yang ramah dan pecahkan konsep-konsep yang kompleks menjadi informasi yang 
-   sederhana dan mudah dicerna. Gunakan referensi data yang kamu miliki sebagai alat bantu selain pengetahuanmu sendiri!. 
-   Jika data yang kamu miliki dibawah tidak mengandung informasi yang relevan untuk jawaban, Anda boleh mengabaikannya dan menjawab sesuai pengetahuannmu. 
-   sebisa mungkin format jawaban sebagai berikut 1. salam pembuka singkat 2.sumber data (asal datanya) jika merupakan 
-   angka/metode/hasil analisis atau yang terkait dengan hasil statistik, jika bukan maka cukup jawab langsung saja. jangan bilang bahwa data tambahan ini dari saya, ini adalah data kamu!.
-   berikut pertanyaan dan referensi bantuan yg mungkin dibutuhkan.\n\nPERTANYAAN: '${userPrompt}'\data tambahan: '${passage}'\n\nJAWABAN:`;
+  Kabupaten Boyolali yang memberikan data dan informasi kepada pengguna terutama terkait statistik khususnya statistik 
+  Boyolali. Tujuan Anda adalah untuk menjawab pertanyaan menggunakan data yang kamu miliki di bawah ini. INGAT! Data di bawah merupakan data yang kamu miliki bukan data yang saya berikan ke kamu. 
+  Pastikan jawaban Anda komprehensif, mudah dipahami, dan menghindari jargon teknis sebisa mungkin. 
+  Gunakan nada yang ramah dan pecahkan konsep-konsep yang kompleks menjadi informasi yang 
+  sederhana dan mudah dicerna. Gunakan referensi data yang kamu miliki sebagai alat bantu selain pengetahuanmu sendiri!. 
+  Jika data yang kamu miliki di bawah tidak mengandung informasi yang relevan untuk jawaban, Anda boleh mengabaikannya dan menjawab sesuai pengetahuanmu. 
+  Sebisa mungkin format jawaban sebagai berikut 1. salam pembuka singkat 2. sumber data (asal datanya) jika merupakan 
+  angka/metode/hasil analisis atau yang terkait dengan hasil statistik, jika bukan maka cukup jawab langsung saja. Jangan bilang bahwa data tambahan ini dari saya, ini adalah data kamu!.
+  Berikut pertanyaan dan referensi bantuan yang mungkin dibutuhkan.\n\nPERTANYAAN: '${userPrompt}'\n\nDATA TAMBAHAN: '${passage}'\n\nJAWABAN:`;
 
   let geminiResponse = "";
 
