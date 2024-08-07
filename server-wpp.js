@@ -109,7 +109,7 @@ async function start(client) {
             return
         }
         // console.log("client == ", client);
-        // console.log("message == ", message);
+        console.log("message == ", message);
         // console.log("session == ", SESSION_STATUS);
         const userPhoneNumber = message.from;
         const botPhoneNumber = message.to;
@@ -206,7 +206,9 @@ async function start(client) {
                 responseText = MENU_STRUCTURE["0"].message;
             } else if (optionSession && optionSession != "0") {
                 if (optionSession === "2") {
+                    await client.startTyping(userPhoneNumber);
                     responseText = await handleGeminiResponse(userMessage);
+                    await client.stopTyping(userPhoneNumber);
                 }
                 if (optionSession === "3") {
                     await sendMessageToPegawai(client, SESSION_STATUS[userPhoneNumber].pegawaiPhoneNumber, userMessage, userPhoneNumber);
@@ -248,7 +250,7 @@ async function start(client) {
             }
 
             await sendWhatsAppMessage(client, userPhoneNumber, responseText);
-            if (optionSession == "2"){
+            if (SESSION_STATUS[userPhoneNumber].optionSession == "2"){
                 await sendWhatsAppMessage(client, userPhoneNumber, OPTION_THREE + BACK_TO_MENU)
             }
 

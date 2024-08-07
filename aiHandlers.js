@@ -67,7 +67,7 @@ function processDocuments(data, userPrompt) {
 }
 
 // Load JSON data from file
-const data = JSON.parse(fs.readFileSync('./parsed_data_v1.js', 'utf8'));
+const data = JSON.parse(fs.readFileSync('./parsed_data_v1.json', 'utf8'));
 
 
 // Function to handle Gemini response
@@ -103,7 +103,7 @@ export async function handleGeminiResponse(userPrompt) {
   Gunakan nada yang ramah dan pecahkan konsep-konsep yang kompleks menjadi informasi yang 
   sederhana dan mudah dicerna. Gunakan referensi data yang kamu miliki sebagai alat bantu selain pengetahuanmu sendiri!. 
   Jika data yang kamu miliki di bawah tidak mengandung informasi yang relevan untuk jawaban, Anda boleh mengabaikannya dan menjawab sesuai pengetahuanmu. 
-  Sebisa mungkin format jawaban sebagai berikut 1. salam pembuka singkat 2. sumber data (asal datanya) jika merupakan 
+  Sebisa mungkin format jawaban sebagai berikut 1. salam pembuka singkat 2. sumber data (asal datanya, judulnya saja) jika merupakan 
   angka/metode/hasil analisis atau yang terkait dengan hasil statistik, jika bukan maka cukup jawab langsung saja. Jangan bilang bahwa data tambahan ini dari saya, ini adalah data kamu!.
   Berikut pertanyaan dan referensi bantuan yang mungkin dibutuhkan.\n\nPERTANYAAN: '${userPrompt}'\n\nDATA TAMBAHAN: '${passage}'\n\nJAWABAN:`;
 

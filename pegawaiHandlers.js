@@ -121,69 +121,81 @@ dotenv.config();
 /**
  * Sends a message to a staff member (pegawai) via WhatsApp.
  * 
- * @param {string} businessPhoneNumberId - The ID of the business phone number.
+ * @param {string} businessPhoneNumberId - The ID of the business phone number (official) / client (wpp).
  * @param {string} pegawaiNumber - The phone number of the staff member.
  * @param {string} userMessage - The message to be sent to the staff member.
  * @param {string} userPhoneNumber - The phone number of the user initiating the message.
  * @returns {Promise<void>} - A promise that resolves when the message is sent or rejects if an error occurs.
  */
-export async function sendMessageToPegawai(businessPhoneNumberId, pegawaiNumber, userMessage, userPhoneNumber) {
-  let data;
+export async function sendMessageToPegawai(client, pegawaiNumber, userMessage, userPhoneNumber) {
+  // let data;
 
   // Prepare the data object based on the userMessage
-  if (userMessage === "4") {
+  if (userMessage === "3") {
+    console.log("HAIYA");
     userMessage = BROADCAST_PEGAWAI;
-    data = {
-      messaging_product: "whatsapp",
-      to: pegawaiNumber,
-      type: 'interactive',
-      interactive: {
-        header: {
-          type: 'text',
-          text: "TANGGAPI SESI TANYA JAWAB?"
-        },
-        type: 'button',
-        body: {
-          text: userMessage
-        },
-        action: {
-          buttons: [
-            {
-              type: 'reply',
-              reply: {
-                id: `respond_${userPhoneNumber}`,
-                title: 'Mulai Sesi!'
-              }
-            }
-          ]
+    // data = {
+    //   messaging_product: "whatsapp",
+    //   to: pegawaiNumber,
+    //   type: 'interactive',
+    //   interactive: {
+    //     header: {
+    //       type: 'text',
+    //       text: "TANGGAPI SESI TANYA JAWAB?"
+    //     },
+    //     type: 'button',
+    //     body: {
+    //       text: userMessage
+    //     },
+    //     action: {
+    //       buttons: [
+    //         {
+    //           type: 'reply',
+    //           reply: {
+    //             id: `respond_${userPhoneNumber}`,
+    //             title: 'Mulai Sesi!'
+    //           }
+    //         }
+    //       ]
+    //     }
+    //   }
+    // };
+    // Example
+    console.log("NOMOR == ", pegawaiNumber);
+    await client.sendText(pegawaiNumber, 'WPPConnect message with buttons', {
+      useTemplateButtons: true, // False for legacy
+      buttons: [
+        {
+          url: 'https://wppconnect.io/',
+          text: 'WPPConnect Site'
         }
-      }
-    };
+      ]
+    });
   } else {
-    data = {
-      messaging_product: "whatsapp",
-      to: pegawaiNumber,
-      text: { body: userMessage }, // Correct structure for text messages
-    };
-  }
-
-  // Define the API endpoint and headers
-  const url = `https://graph.facebook.com/v20.0/${businessPhoneNumberId}/messages`;
-  const headers = {
-    Authorization: `Bearer ${GRAPH_API_TOKEN}`,
-    "Content-Type": "application/json",
+    // data = {
+    //   messaging_product: "whatsapp",
+    //   to: pegawaiNumber,
+    //   text: { body: userMessage }, // Correct structure for text messages
+    throw Error
   };
 
-  try {
-    // Send the message using axios
-    const response = await axios.post(url, data, { headers });
-    console.log(`Message sent successfully to ${pegawaiNumber}. Response:`, response.data);
-  } catch (error) {
-    // Log detailed error information
-    console.error(`Error sending message to ${pegawaiNumber}:`);
-    console.error(`Message Content: ${userMessage}`);
-    console.error("Error details:", error.response ? error.response.data : error.message);
-  }
+  // // Define the API endpoint and headers
+  // const url = `https://graph.facebook.com/v20.0/${businessPhoneNumberId}/messages`;
+  // const headers = {
+  //   Authorization: `Bearer ${GRAPH_API_TOKEN}`,
+  //   "Content-Type": "application/json",
+  // };
+
+  // try {
+  //   // Send the message using axios
+  //   const response = await axios.post(url, data, { headers });
+  //   console.log(`Message sent successfully to ${pegawaiNumber}. Response:`, response.data);
+  // } catch (error) {
+  //   // Log detailed error information
+  //   console.error(`Error sending message to ${pegawaiNumber}:`);
+  //   console.error(`Message Content: ${userMessage}`);
+  //   console.error("Error details:", error.response ? error.response.data : error.message);
+  // }
 }
 
 /**
@@ -202,13 +214,13 @@ export async function sendMessageToPegawai(businessPhoneNumberId, pegawaiNumber,
  * @param {string} userPhoneNumber - The phone number of the user sending the message.
  * @returns {Promise<boolean>} - Returns true if all messages were sent successfully, false otherwise.
  */
-export async function pegawaiBroadcast(businessPhoneNumberId, availablePegawai, userMessage, userPhoneNumber) {
+export async function pegawaiBroadcast(client, availablePegawai, userMessage, userPhoneNumber) {
   if (availablePegawai && availablePegawai.length > 0) {
     // Send broadcast to all available staff members
     for (const number of availablePegawai) {
       try {
         // Attempt to send the message
-        await sendMessageToPegawai(businessPhoneNumberId, number, userMessage, userPhoneNumber);
+        await sendMessageToPegawai(client, number, userMessage, userPhoneNumber);
         console.log(`Message sent successfully to ${number}`);
       } catch (error) {
         // Log error details and indicate failure

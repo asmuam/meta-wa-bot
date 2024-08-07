@@ -1,18 +1,18 @@
-import dotenv from 'dotenv';
 import express from 'express';
-
-dotenv.config();
+import 'dotenv/config';
 export const APP = express();
+import { config } from 'dotenv';
+config(); // Ini memuat variabel lingkungan dari file .env
 
 const WELCOME_MESSAGE = `Selamat datang di BPS Boyolali bot
 https://boyolalikab.bps.go.id/`;
 const MENU_MESSAGE = `
 \nKetik *1* untuk Statistik Boyolali
 Ketik *2* untuk tanya AI
-Ketik *3* untuk tanya CS\n
 📷 *Instagram* : https://www.instagram.com/bpskabboyolali/
 🎥 *YouTube* : https://www.youtube.com/@BPSKabupatenBoyolali
 `;
+//Ketik *3* untuk tanya CS\n
 
 export const UNSUPPORTED_TYPE_MESSAGE = "Mohon maaf. Kami hanya mendukung percakapan berbasis teks.";
 export const HOME_MESSAGE = WELCOME_MESSAGE + MENU_MESSAGE;
@@ -25,7 +25,7 @@ export const OPTION_THREE = "Kirim pertanyaan untuk AI: ";
 export const OPTION_FOUR = "Tunggu beberapa saat, kami sedang menghubungi pegawai yang bertugas.";
 
 export const VALID_OPTIONS = ["1", "2", "3"];
-export const { WEBHOOK_VERIFY_TOKEN, GRAPH_API_TOKEN, PORT, BOT_NUMBER, BOT_NAME } = process.env;
+export const { WEBHOOK_VERIFY_TOKEN, GRAPH_API_TOKEN, PORT, BOT_NUMBER, BOT_NAME, PEGAWAI_NUMBER } = process.env;
 
 /** OBJEK UNTUK MELACAK STATUS SESI PENGGUNA
  * SESSION_STATUS[USER_PHONE_NUMBER]={CLIENT:CLIENT, LAST_ACTIVE: DATE, OPTION_SESSION: NULL, BUSINESS_PHONE_NUMBER_ID: REQUIRED, PEGAWAI_PHONE_NUMBER: NULL}
