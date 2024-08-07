@@ -24,7 +24,7 @@ export const OPTION_TWO = "Kirim pertanyaan seputar statistik secara umum: ";
 export const OPTION_THREE = "Kirim pertanyaan untuk AI: ";
 export const OPTION_FOUR = "Tunggu beberapa saat, kami sedang menghubungi pegawai yang bertugas.";
 
-export const VALID_OPTIONS = ["1", "2", "3"];
+export const VALID_OPTIONS = ["1", "2"];
 export const { WEBHOOK_VERIFY_TOKEN, GRAPH_API_TOKEN, PORT, BOT_NUMBER, BOT_NAME, PEGAWAI_NUMBER } = process.env;
 
 /** OBJEK UNTUK MELACAK STATUS SESI PENGGUNA
