@@ -258,8 +258,6 @@ async function start(client) {
     });
 }
 
-// Define helper functions
-
 async function sendWhatsAppMessage(client, to, message) {
     try {
         await markMessageAsSeen(client, to);
@@ -286,7 +284,6 @@ async function markMessageAsSeen(client, messageId) {
         console.error(`Failed to mark message ${messageId} as seen:`, error.message);
     }
 }
-
 async function handleSpamProtection(businessPhoneNumberId, recipient, message) {
     // Implement your spam protection logic here
     if (!message) {
@@ -343,6 +340,4 @@ async function handleSpamProtection(businessPhoneNumberId, recipient, message) {
     }
     return false; // Example return value
 }
-
-// Add your remaining helper functions here (handleStatBoy, handleStatGen, handleGeminiResponse, sendMessageToPegawai, etc.)
 
