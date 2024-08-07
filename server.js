@@ -30,190 +30,190 @@ let serverOnlineTime = 0;
 let repliedUsers = {};
 let userActivity = {}; // To track user activity and warnings
 
-/**
- * Handle spam protection for a given user by monitoring their message activity.
- * This function keeps track of the number of messages a user sends within a given time window
- * and applies spam protection rules accordingly.
- *
- * @param {string} businessPhoneNumberId - The phone number of the WhatsApp Business Account (WABA).
- * @param {string} recipient - The phone number of the user who sent the message.
- * @param {Object} [messages] - The message object containing message details. If null or undefined, no action is taken.
- * @returns {Promise<boolean>} - Returns true if the user is blocked, false otherwise.
- */
-async function handleSpamProtection(businessPhoneNumberId, recipient, messages) {
-  if (!messages) {
-    console.log("No messages found, skipping spam protection.");
-    return false;
-  }
+// /**
+//  * Handle spam protection for a given user by monitoring their message activity.
+//  * This function keeps track of the number of messages a user sends within a given time window
+//  * and applies spam protection rules accordingly.
+//  *
+//  * @param {string} businessPhoneNumberId - The phone number of the WhatsApp Business Account (WABA).
+//  * @param {string} recipient - The phone number of the user who sent the message.
+//  * @param {Object} [messages] - The message object containing message details. If null or undefined, no action is taken.
+//  * @returns {Promise<boolean>} - Returns true if the user is blocked, false otherwise.
+//  */
+// async function handleSpamProtection(businessPhoneNumberId, recipient, messages) {
+//   if (!messages) {
+//     console.log("No messages found, skipping spam protection.");
+//     return false;
+//   }
 
-  // Initialize user data if not present
-  if (!userActivity[recipient]) {
-    userActivity[recipient] = { messageCount: 0, lastMessageTime: Date.now(), warnings: 0 };
-    console.log(`Initialized user data for ${recipient}.`);
-  }
+//   // Initialize user data if not present
+//   if (!userActivity[recipient]) {
+//     userActivity[recipient] = { messageCount: 0, lastMessageTime: Date.now(), warnings: 0 };
+//     console.log(`Initialized user data for ${recipient}.`);
+//   }
 
-  const currentTime = Date.now();
-  const userData = userActivity[recipient];
+//   const currentTime = Date.now();
+//   const userData = userActivity[recipient];
 
-  // Reset message count if more than a minute has passed
-  if (currentTime - userData.lastMessageTime > 60000) {  // 1 minute in milliseconds
-    userData.messageCount = 0;
-    console.log(`Reset message count for ${recipient} due to inactivity.`);
-  }
+//   // Reset message count if more than a minute has passed
+//   if (currentTime - userData.lastMessageTime > 60000) {  // 1 minute in milliseconds
+//     userData.messageCount = 0;
+//     console.log(`Reset message count for ${recipient} due to inactivity.`);
+//   }
 
-  userData.messageCount += 1;
-  userData.lastMessageTime = currentTime;
+//   userData.messageCount += 1;
+//   userData.lastMessageTime = currentTime;
 
-  console.log(`User ${recipient} has sent ${userData.messageCount} messages.`);
+//   console.log(`User ${recipient} has sent ${userData.messageCount} messages.`);
 
-  // Check for spam behavior
-  if (userData.messageCount > MAX_MESSAGES_PER_MINUTE) {
-    userData.warnings += 1;
-    userData.messageCount = 0; // Reset the message count after a warning
+//   // Check for spam behavior
+//   if (userData.messageCount > MAX_MESSAGES_PER_MINUTE) {
+//     userData.warnings += 1;
+//     userData.messageCount = 0; // Reset the message count after a warning
 
-    console.log(`User ${recipient} exceeded message limit. Warnings: ${userData.warnings}`);
+//     console.log(`User ${recipient} exceeded message limit. Warnings: ${userData.warnings}`);
 
-    if (userData.warnings >= SPAM_THRESHOLD) {
-      // Block user or take action (e.g., notify admin)
-      try {
-        await sendWhatsAppMessage(businessPhoneNumberId, recipient, "You have been blocked due to excessive messaging.");
-        console.log(`User ${recipient} has been blocked.`);
-      } catch (error) {
-        console.error("Failed to send block message:", error);
-      }
-      // Optionally, add the user to a blacklist
-      return true;
-    } else {
-      // Send warning message
-      try {
-        await sendWhatsAppMessage(businessPhoneNumberId, recipient, `Warning: Please reduce the number of messages. You have ${SPAM_THRESHOLD - userData.warnings} warnings left.`);
-        console.log(`Warning sent to user ${recipient}.`);
-      } catch (error) {
-        console.error("Failed to send warning message:", error);
-      }
-    }
-  }
+//     if (userData.warnings >= SPAM_THRESHOLD) {
+//       // Block user or take action (e.g., notify admin)
+//       try {
+//         await sendWhatsAppMessage(businessPhoneNumberId, recipient, "You have been blocked due to excessive messaging.");
+//         console.log(`User ${recipient} has been blocked.`);
+//       } catch (error) {
+//         console.error("Failed to send block message:", error);
+//       }
+//       // Optionally, add the user to a blacklist
+//       return true;
+//     } else {
+//       // Send warning message
+//       try {
+//         await sendWhatsAppMessage(businessPhoneNumberId, recipient, `Warning: Please reduce the number of messages. You have ${SPAM_THRESHOLD - userData.warnings} warnings left.`);
+//         console.log(`Warning sent to user ${recipient}.`);
+//       } catch (error) {
+//         console.error("Failed to send warning message:", error);
+//       }
+//     }
+//   }
 
-  return false;
-}
-
-
-
-/**
- * Mengirim pesan WhatsApp menggunakan Graph API Facebook.
- * Pesan dapat dikirim sebagai balasan untuk pesan tertentu dengan menyediakan ID pesan konteks.
- * Hanya menerima type text
- * 
- * @async
- * @function
- * @name sendWhatsAppMessage
- *
- * @param {string} businessPhoneNumberId - ID nomor telepon bisnis yang digunakan untuk mengirim pesan.
- * @param {string} recipient - Nomor telepon penerima pesan.
- * @param {string} text - Teks pesan yang akan dikirim.
- * @param {string} [context_message_id=null] - (Opsional) ID pesan konteks untuk mengirim balasan (reply).
- *
- * @example
- * sendWhatsAppMessage('123456789', 'recipient123', 'Hello, world!');
- * sendWhatsAppMessage('123456789', 'recipient123', 'This is a reply', 'message_id_456');
- *
- * @returns {Promise<void>}
- */
-async function sendWhatsAppMessage(businessPhoneNumberId, recipient, text, context_message_id = null) {
-  const url = `https://graph.facebook.com/v20.0/${businessPhoneNumberId}/messages`;
-  const headers = {
-    Authorization: `Bearer ${GRAPH_API_TOKEN}`,
-    "Content-Type": "application/json",
-  };
-  const data = {
-    messaging_product: "whatsapp",
-    to: recipient,
-    text: { body: text },
-  };
-  if (context_message_id) {
-    data.context = { message_id: context_message_id };
-  }
-
-  try {
-    await axios.post(url, data, { headers });
-    console.log("Message sent successfully:");
-  } catch (error) {
-    console.error("Error sending message:");
-    console.error(`Recipient: ${recipient}`);
-    console.error(`Message: ${text}`);
-    console.error("Error details:", error.response.data);
-  }
-}
+//   return false;
+// }
 
 
-/**
- * Marks a WhatsApp message as seen using the Facebook Graph API.
- * 
- * @param {string} businessPhoneNumberId - The ID of the business phone number.
- * @param {string} messageId - The ID of the message to mark as seen.
- * @returns {Promise<void>} - A promise that resolves when the message is marked as seen.
- * 
- * @throws {Error} - Throws an error if the request to mark the message as seen fails.
- */
-async function markMessageAsSeen(businessPhoneNumberId, messageId) {
-  // Construct the URL for the API request
-  const url = `https://graph.facebook.com/v20.0/${businessPhoneNumberId}/messages`;
 
-  // Set the request headers
-  const headers = {
-    Authorization: `Bearer ${GRAPH_API_TOKEN}`,  // Authorization token
-    "Content-Type": "application/json",  // Content type of the request
-  };
+// /**
+//  * Mengirim pesan WhatsApp menggunakan Graph API Facebook.
+//  * Pesan dapat dikirim sebagai balasan untuk pesan tertentu dengan menyediakan ID pesan konteks.
+//  * Hanya menerima type text
+//  * 
+//  * @async
+//  * @function
+//  * @name sendWhatsAppMessage
+//  *
+//  * @param {string} businessPhoneNumberId - ID nomor telepon bisnis yang digunakan untuk mengirim pesan.
+//  * @param {string} recipient - Nomor telepon penerima pesan.
+//  * @param {string} text - Teks pesan yang akan dikirim.
+//  * @param {string} [context_message_id=null] - (Opsional) ID pesan konteks untuk mengirim balasan (reply).
+//  *
+//  * @example
+//  * sendWhatsAppMessage('123456789', 'recipient123', 'Hello, world!');
+//  * sendWhatsAppMessage('123456789', 'recipient123', 'This is a reply', 'message_id_456');
+//  *
+//  * @returns {Promise<void>}
+//  */
+// async function sendWhatsAppMessage(businessPhoneNumberId, recipient, text, context_message_id = null) {
+//   const url = `https://graph.facebook.com/v20.0/${businessPhoneNumberId}/messages`;
+//   const headers = {
+//     Authorization: `Bearer ${GRAPH_API_TOKEN}`,
+//     "Content-Type": "application/json",
+//   };
+//   const data = {
+//     messaging_product: "whatsapp",
+//     to: recipient,
+//     text: { body: text },
+//   };
+//   if (context_message_id) {
+//     data.context = { message_id: context_message_id };
+//   }
 
-  // Define the request payload
-  const data = {
-    messaging_product: "whatsapp",
-    status: "read",
-    message_id: messageId,  // ID of the message to mark as seen
-  };
-
-  try {
-    // Send a POST request to mark the message as seen
-    await axios.post(url, data, { headers });
-    console.log("Message marked as seen successfully.");
-  } catch (error) {
-    // Log an error if the request fails
-    console.error("Error marking message as seen:", error.response?.data || error.message);
-  }
-}
-
-// TODO typing indicator
-async function showTypingIndicator() {
-}
+//   try {
+//     await axios.post(url, data, { headers });
+//     console.log("Message sent successfully:");
+//   } catch (error) {
+//     console.error("Error sending message:");
+//     console.error(`Recipient: ${recipient}`);
+//     console.error(`Message: ${text}`);
+//     console.error("Error details:", error.response.data);
+//   }
+// }
 
 
-/**
- * Menangani kedaluwarsa sesi untuk penerima tertentu.
- * Menghapus status sesi dari objek SESSION_STATUS dan mengirim pesan pemberitahuan sesi kedaluwarsa melalui WhatsApp.
- *
- * @async
- * @function
- * @name handleSessionExpiration
- * 
- * @param {string} business_phone_number_id - ID nomor telepon bisnis yang digunakan untuk mengirim pesan.
- * @param {string} recipient - Penerima yang sesi-nya telah berakhir.
- *
- * @example
- * handleSessionExpiration('123456789', 'recipient123');
- *
- * @returns {Promise<void>}
- */
-async function handleSessionExpiration(businessPhoneNumberId, recipient) {
+// /**
+//  * Marks a WhatsApp message as seen using the Facebook Graph API.
+//  * 
+//  * @param {string} businessPhoneNumberId - The ID of the business phone number.
+//  * @param {string} messageId - The ID of the message to mark as seen.
+//  * @returns {Promise<void>} - A promise that resolves when the message is marked as seen.
+//  * 
+//  * @throws {Error} - Throws an error if the request to mark the message as seen fails.
+//  */
+// async function markMessageAsSeen(businessPhoneNumberId, messageId) {
+//   // Construct the URL for the API request
+//   const url = `https://graph.facebook.com/v20.0/${businessPhoneNumberId}/messages`;
 
-  if (SESSION_STATUS[recipient]) {
-    await sendWhatsAppMessage(businessPhoneNumberId, recipient, SESSION_EXPIRED_MESSAGE);
-    if (SESSION_STATUS[recipient].pegawaiPhoneNumber) {
-      await sendWhatsAppMessage(businessPhoneNumberId, SESSION_STATUS[recipient].pegawaiPhoneNumber, SESSION_QNA_EXPIRED_MESSAGE);
-      availablePegawai.push(SESSION_STATUS[recipient].pegawaiPhoneNumber);
-    }
-  }
-  delete SESSION_STATUS[recipient];
-}
+//   // Set the request headers
+//   const headers = {
+//     Authorization: `Bearer ${GRAPH_API_TOKEN}`,  // Authorization token
+//     "Content-Type": "application/json",  // Content type of the request
+//   };
+
+//   // Define the request payload
+//   const data = {
+//     messaging_product: "whatsapp",
+//     status: "read",
+//     message_id: messageId,  // ID of the message to mark as seen
+//   };
+
+//   try {
+//     // Send a POST request to mark the message as seen
+//     await axios.post(url, data, { headers });
+//     console.log("Message marked as seen successfully.");
+//   } catch (error) {
+//     // Log an error if the request fails
+//     console.error("Error marking message as seen:", error.response?.data || error.message);
+//   }
+// }
+
+// // TODO typing indicator
+// async function showTypingIndicator() {
+// }
+
+
+// /**
+//  * Menangani kedaluwarsa sesi untuk penerima tertentu.
+//  * Menghapus status sesi dari objek SESSION_STATUS dan mengirim pesan pemberitahuan sesi kedaluwarsa melalui WhatsApp.
+//  *
+//  * @async
+//  * @function
+//  * @name handleSessionExpiration
+//  * 
+//  * @param {string} business_phone_number_id - ID nomor telepon bisnis yang digunakan untuk mengirim pesan.
+//  * @param {string} recipient - Penerima yang sesi-nya telah berakhir.
+//  *
+//  * @example
+//  * handleSessionExpiration('123456789', 'recipient123');
+//  *
+//  * @returns {Promise<void>}
+//  */
+// async function handleSessionExpiration(businessPhoneNumberId, recipient) {
+
+//   if (SESSION_STATUS[recipient]) {
+//     await sendWhatsAppMessage(businessPhoneNumberId, recipient, SESSION_EXPIRED_MESSAGE);
+//     if (SESSION_STATUS[recipient].pegawaiPhoneNumber) {
+//       await sendWhatsAppMessage(businessPhoneNumberId, SESSION_STATUS[recipient].pegawaiPhoneNumber, SESSION_QNA_EXPIRED_MESSAGE);
+//       availablePegawai.push(SESSION_STATUS[recipient].pegawaiPhoneNumber);
+//     }
+//   }
+//   delete SESSION_STATUS[recipient];
+// }
 
 
 

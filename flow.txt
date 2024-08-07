@@ -315,3 +315,117 @@ client ==  Whatsapp {
   },
   connected: true
 }
+
+
+Step 1: Parsing PDF files in Python
+You can use libraries like PyMuPDF (also known as fitz) or pdfminer.six to parse PDF files. Here's an example using PyMuPDF:
+
+Install the required libraries:
+
+bash
+Copy code
+pip install pymupdf
+Create a Python script to parse PDF files:
+
+python
+Copy code
+import fitz
+import json
+import os
+
+def parse_pdf(file_path):
+    doc = fitz.open(file_path)
+    text = ""
+    for page in doc:
+        text += page.get_text()
+    return text
+
+def parse_pdfs_in_directory(directory):
+    data = []
+    for filename in os.listdir(directory):
+        if filename.endswith('.pdf'):
+            file_path = os.path.join(directory, filename)
+            text = parse_pdf(file_path)
+            data.append({
+                'filename': filename,
+                'content': text
+            })
+    return data
+
+if __name__ == "__main__":
+    directory = './pdfs'  # Directory containing PDF files
+    parsed_data = parse_pdfs_in_directory(directory)
+    with open('parsed_data.json', 'w') as json_file:
+        json.dump(parsed_data, json_file, indent=4)
+This script parses all PDF files in the specified directory and saves the extracted text to a JSON file.
+
+Step 2: Integrate the parsed data into your Node.js backend
+Read the parsed JSON data in your Node.js application:
+
+javascript
+Copy code
+const fs = require('fs');
+const data = JSON.parse(fs.readFileSync('./parsed_data.json', 'utf8'));
+
+// Your existing code
+Using VectorDB for document search:
+
+Follow the VectorDB tutorial to set up and integrate document search capabilities. Here’s a basic outline of how to integrate it:
+
+javascript
+Copy code
+const { VectorDB } = require('vectordb');
+const vectorDB = new VectorDB({ apiKey: process.env.VECTORDB_API_KEY });
+
+async function indexDocuments(documents) {
+    for (const doc of documents) {
+        await vectorDB.index({
+            id: doc.filename,
+            text: doc.content
+        });
+    }
+}
+
+async function searchDocuments(query) {
+    const results = await vectorDB.search(query);
+    return results;
+}
+
+// Index documents on startup
+indexDocuments(data).then(() => {
+    console.log('Documents indexed successfully');
+}).catch(console.error);
+
+// Example function to handle search queries
+async function handleSearchQuery(query) {
+    const results = await searchDocuments(query);
+    console.log('Search results:', results);
+    return results;
+}
+Integrate the search functionality into your Express routes:
+
+javascript
+Copy code
+const express = require('express');
+const app = express();
+
+app.get('/search', async (req, res) => {
+    const query = req.query.q;
+    if (!query) {
+        return res.status(400).send('Query parameter is required');
+    }
+
+    try {
+        const results = await handleSearchQuery(query);
+        res.json(results);
+    } catch (error) {
+        console.error('Error handling search query:', error);
+        res.status(500).send('Internal server error');
+    }
+});
+
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+    console.log(`Server running on port ${port}`);
+});
+This setup will allow you to parse PDF files using Python, save the extracted text to a JSON file, and then use that data in your Node.js backend to index and search documents using VectorDB.

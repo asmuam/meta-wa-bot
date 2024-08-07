@@ -211,22 +211,25 @@ async function start(client) {
                 if (optionSession === "3") {
                     await sendMessageToPegawai(client, SESSION_STATUS[userPhoneNumber].pegawaiPhoneNumber, userMessage, userPhoneNumber);
                     return;
-                }
-                if (currentMenu && currentMenu.options?.[`${SESSION_STATUS[userPhoneNumber]?.optionSession}.${userMessage}`]) {
-                    console.log("================");
-                    if (userMessage === "99") {
-                        SESSION_STATUS[userPhoneNumber].optionSession = SESSION_STATUS[userPhoneNumber].optionSession.split('.').slice(0, -1).join('.') || "0";
+                }                
+                if(currentMenu){
+                    if (currentMenu.options?.[`${SESSION_STATUS[userPhoneNumber]?.optionSession}.${userMessage}`]) {
+                        console.log("================");
+                        if (userMessage === "99") {
+                            SESSION_STATUS[userPhoneNumber].optionSession = SESSION_STATUS[userPhoneNumber].optionSession.split('.').slice(0, -1).join('.') || "0";
+                        } else {
+                            SESSION_STATUS[userPhoneNumber].optionSession = `${SESSION_STATUS[userPhoneNumber].optionSession}.${userMessage}`;
+                        }
+                        const newMenu = MENU_STRUCTURE[SESSION_STATUS[userPhoneNumber].optionSession];
+                        responseText = (newMenu ? newMenu.message : WRONG_COMMAND + MENU_STRUCTURE[SESSION_STATUS[userPhoneNumber].optionSession].message) + BACK_TO_MENU;
                     } else {
-                        SESSION_STATUS[userPhoneNumber].optionSession = `${SESSION_STATUS[userPhoneNumber].optionSession}.${userMessage}`;
+                        responseText = WRONG_COMMAND + MENU_STRUCTURE[SESSION_STATUS[userPhoneNumber].optionSession].message + BACK_TO_MENU;
                     }
-                    const newMenu = MENU_STRUCTURE[SESSION_STATUS[userPhoneNumber].optionSession];
-                    responseText = (newMenu ? newMenu.message : WRONG_COMMAND + MENU_STRUCTURE[SESSION_STATUS[userPhoneNumber].optionSession].message) + BACK_TO_MENU;
-                } else {
-                    responseText = WRONG_COMMAND + MENU_STRUCTURE[SESSION_STATUS[userPhoneNumber].optionSession].message + BACK_TO_MENU;
                 }
-
             } else if (isValidOption) {
                 SESSION_STATUS[userPhoneNumber].optionSession = userMessage;
+                console.log("SESSION == ",SESSION_STATUS);
+                
                 if (userMessage === "1") {
                     responseText = MENU_STRUCTURE[SESSION_STATUS[userPhoneNumber].optionSession].message + BACK_TO_MENU;
                 } else if (userMessage === "2") {
@@ -245,8 +248,11 @@ async function start(client) {
             }
 
             await sendWhatsAppMessage(client, userPhoneNumber, responseText);
+            if (optionSession == "2"){
+                await sendWhatsAppMessage(client, userPhoneNumber, OPTION_THREE + BACK_TO_MENU)
+            }
 
-            if (!isBroadcast && optionSession === "3") {
+            if (!isBroadcast && SESSION_STATUS[userPhoneNumber].optionSession == "3") {                
                 await sendWhatsAppMessage(client, userPhoneNumber, NO_AVAILABLE_PEGAWAI + HOME_MESSAGE);
                 SESSION_STATUS[userPhoneNumber] = {
                     ...SESSION_STATUS[userPhoneNumber],
@@ -287,7 +293,7 @@ async function markMessageAsSeen(client, messageId) {
 async function handleSpamProtection(businessPhoneNumberId, recipient, message) {
     // Implement your spam protection logic here
     if (!message) {
-        console.log("No messages found, skipping spam protection.");
+        console.log("No messages found, skipping spam protection."); // if using webhooks it will ignore statuses webhook
         return false;
     }
 
