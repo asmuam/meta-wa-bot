@@ -7,6 +7,9 @@ import chromadb
 import numpy as np
 import pandas as pd
 
+from dotenv import load_dotenv
+load_dotenv() 
+
 import google.generativeai as genai
 from chromadb import Documents, EmbeddingFunction, Embeddings
 
@@ -15,20 +18,19 @@ from sklearn.metrics.pairwise import cosine_similarity
 from nltk.tokenize import sent_tokenize
 
 import nltk
-# nltk.download('punkt')
+nltk.download('punkt')
 
 API_KEY=os.getenv('GEMINI_API_KEY')
-
 genai.configure(api_key=API_KEY)
 
 class GeminiEmbeddingFunction(EmbeddingFunction):
   def __call__(self, input: Documents) -> Embeddings:
-    model = 'models/embedding-001'
+    model = 'models/text-embedding-004'
     title = "Custom query"
     return genai.embed_content(model=model,
                                 content=input,
-                                task_type="retrieval_document",
-                                title=title)["embedding"]
+                                task_type="retrieval_document"
+                                )["embedding"]
   
 
 def parse_pdf(file_path):
@@ -56,6 +58,16 @@ def parse_pdfs_in_directory(directory, watermark_link):
                 'extractedtext': combined_text
             })
     return data
+
+def count_tokens(text):
+    # Menghitung jumlah token berdasarkan kata sebagai pendekatan kasar
+    return len(text.split())
+
+def truncate_prompt(prompt, max_tokens):
+    tokens = prompt.split()
+    if len(tokens) > max_tokens:
+        return ' '.join(tokens[:max_tokens])
+    return prompt
 
   
 def create_chroma_db_from_json(json_file, name):
@@ -99,12 +111,12 @@ def create_chroma_db(documents, name):
     return db
 
 def get_relevant_passage(query, db):
-    results = db.query(query_texts=[query], n_results=1)
+    results = db.query(query_texts=[query], n_results=3)
     if results['documents']:
-        document_id = results['documents'][0][0]  # ID dokumen
-        metadata = results['metadatas'][0][0]    # Metadata untuk dokumen yang relevan
-        passage = results['documents'][0][0]     # Passage relevan
-        
+        document_id = results['ids'][0]  # ID dokumen
+        metadata = results['metadatas'][0]    # Metadata untuk dokumen yang relevan
+        passage = results['documents'][0]     # Passage relevan
+        # print(passage)
         return {
             'passage': passage,
             'metadata': metadata,
@@ -135,16 +147,24 @@ def get_contextual_sentences(sentences, similarities, top_n=7, context_size=7):
         })
     return result
 
-def make_prompt(query, contextual_sentences, metadata):
-    source_info = metadata.get('sumber', 'Unknown source')
-    formatted_sentences = ""
-    for entry in contextual_sentences:
-        context_text = ' '.join(entry['context'])
-        formatted_sentences += f"Sentence: {entry['sentence']}\nContext: {context_text}\n\n"
+def make_prompt(query, passages, metadata):
+    formatted_passages = ""
+    for i, passage in enumerate(passages):
+        sentences = extract_sentences(passage)
+        similarities = find_relevant_sentences(query, sentences)
+        contextual_sentences = get_contextual_sentences(sentences, similarities)
+        
+        source_info = metadata[i].get('sumber', 'Unknown source')
+        formatted_sentences = ""
+        for entry in contextual_sentences:
+            context_text = ' '.join(entry['context'])
+            formatted_sentences += f"Sentence: {entry['sentence']}\nContext: {context_text}\n\n"
+        
+        formatted_passages += f"Passage {i+1}:\n{formatted_sentences}\nSource: {source_info}\n\n"
     
     prompt = ("""Anda adalah seorang perwakilan yang berpengetahuan dan membantu dari Badan Pusat Statistik (BPS)
-    Kabupaten Boyolali yang memberikan data dan informasi kepada pengguna terutama terkait statistik khusunya statistik 
-    boyolali. Tujuan Anda adalah untuk menjawab pertanyaan menggunakan data yang kamu miliki di bawah ini. INGAT! data dibawah merupakan data yang kamu miliki bukan data yang saya berikan ke kamu. 
+    Kabupaten Boyolali yang memberikan data dan informasi kepada pengguna terutama terkait statistik khususnya statistik 
+    Boyolali. Tujuan Anda adalah untuk menjawab pertanyaan menggunakan data yang kamu miliki di bawah ini. INGAT! data dibawah merupakan data yang kamu miliki bukan data yang saya berikan ke kamu. 
     Pastikan jawaban Anda komprehensif, mudah dipahami, dan menghindari jargon teknis sebisa mungkin. 
     Gunakan nada yang ramah dan pecahkan konsep-konsep yang kompleks menjadi informasi yang 
     sederhana dan mudah dicerna. Gunakan referensi data yang kamu miliki sebagai alat bantu selain pengetahuanmu sendiri!. 
@@ -154,47 +174,10 @@ def make_prompt(query, contextual_sentences, metadata):
     berikut pertanyaan dan referensi bantuan yg mungkin dibutuhkan.
     PERTANYAAN: '{query}'
     data tambahan:
-    {formatted_sentences}
-    sumber data: '{source_info}'
+    {formatted_passages}
     ANSWER:
-    """).format(query=query, formatted_sentences=formatted_sentences, source_info=source_info)
+    """).format(query=query, formatted_passages=formatted_passages)
 
+    prompt = truncate_prompt(prompt, 1000000)
     return prompt
 
-def main():
-    # directory = './pdfs'  # Directory containing PDF files
-    # watermark_link = 'https://boyolalikab.bps.go.id'  # Link yang ingin dihapus
-    # documents = parse_pdfs_in_directory(directory, watermark_link)
-    # with open('parsed_data.json', 'w') as json_file:
-    #     json.dump(documents, json_file, indent=4) 
-    
-    json_file = 'parsed_data_v1.json'  # Nama file JSON yang sudah ada
-    db = create_chroma_db_from_json(json_file, "data_pdf")
-    query = "siapa kepala sub bagian umum kabupaten boyolali?"
-    result = get_relevant_passage(query, db)
-    
-
-        
-    if result:
-        document_id = result['document_id']
-        passage = result['passage']
-        metadata = result['metadata']
-        print("PASSAGE")
-        print(passage)
-        print("======================================================")
-        # Extract sentences from the passage
-        sentences = extract_sentences(passage)
-        
-        # Find relevant sentences
-        similarities = find_relevant_sentences(query, sentences)
-        contextual_sentences = get_contextual_sentences(sentences, similarities)
-        
-        prompt = make_prompt(query, contextual_sentences, metadata)
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        answer = model.generate_content(prompt)
-        print(answer)
-    else:
-        print("No relevant passage found.")
-
-if __name__ == "__main__":
-    main()

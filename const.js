@@ -9,10 +9,10 @@ https://boyolalikab.bps.go.id/`;
 const MENU_MESSAGE = `
 \nKetik *1* untuk Statistik Boyolali
 Ketik *2* untuk tanya AI
-📷 *Instagram* : https://www.instagram.com/bpskabboyolali/
+\n📷 *Instagram* : https://www.instagram.com/bpskabboyolali/
 🎥 *YouTube* : https://www.youtube.com/@BPSKabupatenBoyolali
 `;
-//Ketik *3* untuk tanya CS\n
+//Ketik *3* untuk tanya CS
 
 export const UNSUPPORTED_TYPE_MESSAGE = "Mohon maaf. Kami hanya mendukung percakapan berbasis teks.";
 export const HOME_MESSAGE = WELCOME_MESSAGE + MENU_MESSAGE;
@@ -24,7 +24,7 @@ export const OPTION_TWO = "Kirim pertanyaan seputar statistik secara umum: ";
 export const OPTION_THREE = "Kirim pertanyaan untuk AI: ";
 export const OPTION_FOUR = "Tunggu beberapa saat, kami sedang menghubungi pegawai yang bertugas.";
 
-export const VALID_OPTIONS = ["1", "2"];
+export const VALID_OPTIONS = ["1","2"];
 export const { WEBHOOK_VERIFY_TOKEN, GRAPH_API_TOKEN, PORT, BOT_NUMBER, BOT_NAME, PEGAWAI_NUMBER } = process.env;
 
 /** OBJEK UNTUK MELACAK STATUS SESI PENGGUNA

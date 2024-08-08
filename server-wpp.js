@@ -109,7 +109,7 @@ async function start(client) {
             return
         }
         // console.log("client == ", client);
-        console.log("message == ", message);
+        // console.log("message == ", message);
         // console.log("session == ", SESSION_STATUS);
         const userPhoneNumber = message.from;
         const botPhoneNumber = message.to;
@@ -236,6 +236,8 @@ async function start(client) {
                     responseText = MENU_STRUCTURE[SESSION_STATUS[userPhoneNumber].optionSession].message + BACK_TO_MENU;
                 } else if (userMessage === "2") {
                     responseText = OPTION_THREE + BACK_TO_MENU;
+                    await sendWhatsAppMessage(client, userPhoneNumber, responseText);
+                    return
                 } else if (userMessage === "3") {
                     responseText = OPTION_FOUR + BACK_TO_MENU;
                     isBroadcast = await pegawaiBroadcast(client, availablePegawai, userMessage, userPhoneNumber);
@@ -249,9 +251,11 @@ async function start(client) {
                 };
             }
 
-            await sendWhatsAppMessage(client, userPhoneNumber, responseText);
             if (SESSION_STATUS[userPhoneNumber].optionSession == "2"){
+                await sendWhatsAppMessage(client, userPhoneNumber, responseText)
                 await sendWhatsAppMessage(client, userPhoneNumber, OPTION_THREE + BACK_TO_MENU)
+            } else {
+                await sendWhatsAppMessage(client, userPhoneNumber, responseText);
             }
 
             if (!isBroadcast && SESSION_STATUS[userPhoneNumber].optionSession == "3") {                
