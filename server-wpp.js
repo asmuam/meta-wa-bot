@@ -109,7 +109,7 @@ async function start(client) {
             return
         }
         // console.log("client == ", client);
-        // console.log("message == ", message);
+        console.log("message == ", message);
         // console.log("session == ", SESSION_STATUS);
         const userPhoneNumber = message.from;
         const botPhoneNumber = message.to;
@@ -168,6 +168,7 @@ async function start(client) {
         } else if (message.type === 'status') {
             return;
         } else {
+            await sendWhatsAppMessage(client, userPhoneNumber, UNSUPPORTED_TYPE_MESSAGE);
             return;
         }
 
