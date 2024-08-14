@@ -15,9 +15,8 @@
  * along with WPPConnect.  If not, see <https://www.gnu.org/licenses/>.
  */
 import wppconnect from "@wppconnect-team/wppconnect";
-import { MAX_MESSAGES_PER_MINUTE, SPAM_THRESHOLD, HOME_MESSAGE, BACK_ONLINE, WRONG_COMMAND, OPTION_ONE, BACK_TO_MENU, OPTION_TWO, OPTION_FOUR, APP, VALID_OPTIONS, WEBHOOK_VERIFY_TOKEN, GRAPH_API_TOKEN, PORT, SESSION_STATUS, PEGAWAI_NUMBERS, CONNECTED_WITH_PEGAWAI, SESSION_LIMIT, NO_AVAILABLE_PEGAWAI, UNSUPPORTED_TYPE_MESSAGE, SESSION_EXPIRED_MESSAGE, SESSION_QNA_EXPIRED_MESSAGE, BOT_ERROR, BOT_NUMBER, BOT_NAME, MENU_STRUCTURE, NOT_IN_WORKING_HOURS, OPTION_AI } from "./const.js";
+import { MAX_MESSAGES_PER_MINUTE, SPAM_THRESHOLD, HOME_MESSAGE, BACK_ONLINE, WRONG_COMMAND, OPTION_ONE, BACK_TO_MENU, OPTION_TWO, OPTION_FOUR, APP, VALID_OPTIONS, WEBHOOK_VERIFY_TOKEN, GRAPH_API_TOKEN, PORT, SESSION_STATUS, PEGAWAI_NUMBERS, CONNECTED_WITH_PEGAWAI, SESSION_LIMIT, NO_AVAILABLE_PEGAWAI, UNSUPPORTED_TYPE_MESSAGE, SESSION_EXPIRED_MESSAGE, SESSION_QNA_EXPIRED_MESSAGE, BOT_ERROR, BOT_NUMBER, BOT_NAME, MENU_STRUCTURE, NOT_IN_WORKING_HOURS, OPTION_AI, FOOTER } from "./const.js";
 import { isPegawaiPhoneNumberInSession } from "./func.js";
-import { handleStatBoy, handleStatGen } from "./statsHandlers.js";
 import { handleGeminiResponse } from "./aiHandlers.js";
 import { handlePSTResponse, pegawaiBroadcast, sendMessageToPegawai } from "./pegawaiHandlers.js"
 
@@ -162,7 +161,7 @@ async function start(client) {
                 // unsupported types message but still not in session
                 if (!(SESSION_STATUS[userPhoneNumber])) {
                     SESSION_STATUS[userPhoneNumber] = { client: client, lastActive: Date.now(), optionSession: "0", businessPhoneNumberId: botPhoneNumber };
-                    await sendWhatsAppMessage(client, userPhoneNumber, HOME_MESSAGE);
+                    await sendWhatsAppMessage(client, userPhoneNumber, HOME_MESSAGE + FOOTER);
                 }
                 SESSION_STATUS[userPhoneNumber] = {
                     ...SESSION_STATUS[userPhoneNumber],
@@ -200,16 +199,14 @@ async function start(client) {
                 };
                 responseText = MENU_STRUCTURE["0"].message;
             } else if (optionSession && optionSession != "0") {
+                console.log("SESSION == " , SESSION_STATUS);
+                
                 if (optionSession === "6") {
                     await client.startTyping(userPhoneNumber);
                     responseText = await handleGeminiResponse(userMessage);
                     await client.stopTyping(userPhoneNumber);
                 }
-                if (optionSession === "88") { // reserved
-                    await sendMessageToPegawai(client, SESSION_STATUS[userPhoneNumber].pegawaiPhoneNumber, userMessage, userPhoneNumber);
-                    return;
-                }
-                if (currentMenu) {
+                if (currentMenu && optionSession!="6") {
                     if (currentMenu.options?.[`${SESSION_STATUS[userPhoneNumber]?.optionSession}.${userMessage}`]) {
                         console.log("================");
                         if (currentMenu == MENU_STRUCTURE["1.7"]) {
@@ -252,10 +249,11 @@ async function start(client) {
                                 // Additional logic for outside working hours
                             }
                         }
+                        console.log("NEW MENU",newMenu);
                         
-                        // Check if newMenu's message is the same as HOME_MESSAGE
+                        // Check if newMenu's message is the same as HOME_MESSAGE + FOOTER
                         responseText = newMenu
-                            ? (newMenu.message == HOME_MESSAGE ? newMenu.message : newMenu.message + BACK_TO_MENU)
+                            ? (newMenu.message == (HOME_MESSAGE + FOOTER) ? newMenu.message : (newMenu.message + BACK_TO_MENU))
                             : WRONG_COMMAND + MENU_STRUCTURE[SESSION_STATUS[userPhoneNumber].optionSession].message + BACK_TO_MENU;
                     } else {
                         responseText = WRONG_COMMAND + MENU_STRUCTURE[SESSION_STATUS[userPhoneNumber].optionSession].message + BACK_TO_MENU;
@@ -266,20 +264,22 @@ async function start(client) {
                 if (userMessage === "1") {
                     responseText = MENU_STRUCTURE[SESSION_STATUS[userPhoneNumber].optionSession].message + BACK_TO_MENU;
                 } else if (userMessage === "6") {
-                    responseText = OPTION_THREE + BACK_TO_MENU;
+                    responseText = OPTION_AI + BACK_TO_MENU;
                     await sendWhatsAppMessage(client, userPhoneNumber, responseText);
                     SESSION_STATUS[userPhoneNumber] = {
                         ...SESSION_STATUS[userPhoneNumber],
                         lastActive: Date.now(),
-                        optionSession: "0"
+                        optionSession: "6"
                     };
                     return
                 } else if (userMessage === "88") {
                     responseText = OPTION_FOUR + BACK_TO_MENU;
                     isBroadcast = await pegawaiBroadcast(client, availablePegawai, userMessage, userPhoneNumber);
+                } else {
+                    responseText = MENU_STRUCTURE[SESSION_STATUS[userPhoneNumber].optionSession].message + BACK_TO_MENU
                 }
             } else {
-                responseText = WRONG_COMMAND + HOME_MESSAGE;
+                responseText = WRONG_COMMAND + HOME_MESSAGE + FOOTER;
                 SESSION_STATUS[userPhoneNumber] = {
                     ...SESSION_STATUS[userPhoneNumber],
                     lastActive: Date.now(),
@@ -287,7 +287,7 @@ async function start(client) {
                 };
             }
 
-            if (SESSION_STATUS[userPhoneNumber].optionSession == "2") {
+            if (SESSION_STATUS[userPhoneNumber].optionSession == "6") {
                 await sendWhatsAppMessage(client, userPhoneNumber, responseText)
                 await sendWhatsAppMessage(client, userPhoneNumber, OPTION_AI + BACK_TO_MENU)
                 SESSION_STATUS[userPhoneNumber] = {
@@ -296,14 +296,6 @@ async function start(client) {
                 };
             } else {
                 await sendWhatsAppMessage(client, userPhoneNumber, responseText);
-                SESSION_STATUS[userPhoneNumber] = {
-                    ...SESSION_STATUS[userPhoneNumber],
-                    lastActive: Date.now(),
-                };
-            }
-
-            if (!isBroadcast && SESSION_STATUS[userPhoneNumber].optionSession == "3") {
-                await sendWhatsAppMessage(client, userPhoneNumber, NO_AVAILABLE_PEGAWAI + HOME_MESSAGE);
                 SESSION_STATUS[userPhoneNumber] = {
                     ...SESSION_STATUS[userPhoneNumber],
                     lastActive: Date.now(),

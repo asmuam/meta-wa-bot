@@ -163,7 +163,7 @@ export async function handleGeminiResponse(userMessage) {
     try {
       const result = await model.generateContent(data.prompt);
       geminiResponse = result.response.text();
-      return `${geminiResponse} ${DISCLAIMER_AI}`;
+      return `${geminiResponse}${DISCLAIMER_AI}`;
     } catch (error) {
       console.error("Error generating Gemini response:", error);
       return "Maaf, terjadi kesalahan saat memproses permintaan Anda.";

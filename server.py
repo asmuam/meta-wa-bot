@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify
 import json
 import os
 import logging
-from bot_wa_js.aiUtil import create_chroma_db_from_json, get_relevant_passage, make_prompt, genai
+from aiUtil import create_chroma_db_from_json, get_relevant_passage, make_prompt, genai
 
 from dotenv import load_dotenv
 load_dotenv() 

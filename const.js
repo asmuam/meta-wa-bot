@@ -14,7 +14,7 @@ Saya YANTI (Layanan Statistik Boyolali), Asisten Digital BPS Kabupaten Boyolali 
 
 Silahkan *PILIH MENU* layanan yang #SahabatData butuhkan dengan *KETIK ANGKA* yang sesuai:
 `;
-const FOOTER = `
+export const FOOTER = `
 🌐 *Website*   : https://boyolalikab.bps.go.id/
 📷 *Instagram* : https://www.instagram.com/bpskabboyolali/
 🎥 *YouTube*   : https://www.youtube.com/@BPSKabupatenBoyolali
@@ -59,8 +59,9 @@ export const SPAM_THRESHOLD = 2; // Set the number of warnings before blocking
 
 export const BOT_ERROR = `Maaf, bot sedang bermasalah. Kami sedang berupaya sebaik mungkin.`;
 export const DISCLAIMER_AI =
-    `*Disclaimer*: Jawaban ini dihasilkan oleh AI Gemini sehingga terdapat kemungkinan untuk salah.
-    Kunjungi https://boyolalikab.bps.go.id/ untuk mencari informasi yang lebih tepat`
+`
+*Disclaimer*: Jawaban ini dihasilkan oleh AI Gemini sehingga terdapat kemungkinan untuk salah.
+Kunjungi https://boyolalikab.bps.go.id/ untuk mencari informasi yang lebih tepat`
 
 const JENIS_STATISTIK =
     `
@@ -128,10 +129,7 @@ function buildMenuFromData(statisticData) {
             options: ["1. Publikasi", "2. Data dalam tabel", "3. Berita dan Informasi Statistik", "4. Infografis", "5. Berita Resmi Statistik", "6. Layanan Data Lainnya", "7. Chat dengan Admin (Chat admin dilayani pada hari kerja jam 08.00--15.30 WIB)"] 
         },
         "1.1": { 
-            message: 
-`Silahkan Kunjungi Link Berikut untuk Melihat Publikasi dari BPS Boyolali
-
-https://boyolalikab.bps.go.id/publication.html`, 
+            message: `Silahkan Kunjungi Link Berikut untuk Melihat Publikasi dari BPS Boyolali\nhttps://boyolalikab.bps.go.id/publication.html`, 
             options: []
         },
         "1.2": {
@@ -140,31 +138,19 @@ https://boyolalikab.bps.go.id/publication.html`,
             options: ["1. Sosial dan Kependudukan", "2. Ekonomi dan Perdagangan", "3. Pertanian dan Pertambangan"]
         },
         "1.3": { 
-            message: 
-`Silahkan Kunjungi Link Berikut untuk Melihat Berita dan Informasi Statistik dari BPS Boyolali
-
-https://boyolalikab.bps.go.id/news.html`,
+            message: `Silahkan Kunjungi Link Berikut untuk Melihat Berita dan Informasi Statistik dari BPS Boyolali\nhttps://boyolalikab.bps.go.id/news.html`,
             options: []
         },
         "1.4": { 
-            message: 
-`Silahkan Kunjungi Link Berikut untuk Melihat Infografis dari BPS Boyolali
-
-https://boyolalikab.bps.go.id/galery.html`,
+            message: `Silahkan Kunjungi Link Berikut untuk Melihat Infografis dari BPS Boyolali\nhttps://boyolalikab.bps.go.id/galery.html`,
             options: []
         },
         "1.5": { 
-            message: 
-`Silahkan Kunjungi Link Berikut untuk Melihat Berita Resmi Statistik dari BPS Boyolali
-
-https://boyolalikab.bps.go.id/pressrelease.html`,
+            message: `Silahkan Kunjungi Link Berikut untuk Melihat Berita Resmi Statistik dari BPS Boyolali\nhttps://boyolalikab.bps.go.id/pressrelease.html`,
             options: []
         },
         "1.6": { 
-            message: 
-`Silahkan Mengisi Form berikut untuk Layanan Data Lainnya 
-
-https://forms.gle/noguqNvGLCD38edp8`,
+            message: `Silahkan Mengisi Form berikut untuk Layanan Data Lainnya\nhttps://forms.gle/noguqNvGLCD38edp8`,
             options: []
         },
         "1.7": { 
@@ -172,23 +158,19 @@ https://forms.gle/noguqNvGLCD38edp8`,
             options: []
         },
         "2": {
-            message: `Silahkan Mengisi Form dibawah untuk Konsultasi Statistik 
-            http://s.bps.go.id/pengaduanboyolali`,
+            message: `Silahkan Mengisi Form dibawah untuk Konsultasi Statistik\nhttp://s.bps.go.id/pengaduanboyolali`,
             options: []
         },
         "3": {
-            message: `Silahkan Kunjungi Website Silastik untuk Penjualan ProdukStatistik
-            https://silastik.bps.go.id`,
+            message: `Silahkan Kunjungi Website Silastik untuk Penjualan ProdukStatistik\nhttps://silastik.bps.go.id`,
             options: []
         },
         "4": {
-            message: `Silahkan Mengunjungi Website romantik untuk Rekomendasi Statistik
-            https://romantik.web.bps.go.id/`,
+            message: `Silahkan Mengunjungi Website romantik untuk Rekomendasi Statistik\nhttps://romantik.web.bps.go.id/`,
             options: []
         },
         "5": {
-            message: `Silahkan Mengunjungi link dibawah untuk Mengakses Layanan Pengaduan 
-            http://s.bps.go.id/pengaduanboyolali`,
+            message: `Silahkan Mengunjungi link dibawah untuk Mengakses Layanan Pengaduan \nhttp://s.bps.go.id/pengaduanboyolali`,
             options: []
         }
     };
