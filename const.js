@@ -49,7 +49,7 @@ export const BROADCAST_PEGAWAI =
 export const CONNECTED_WITH_PEGAWAI =
     `Anda telah terhubung dengan admin!~`;
 
-export const SESSION_LIMIT = 180000; // 3 menit (milisekon)
+export const SESSION_LIMIT = 360000; // 3 menit (milisekon)
 
 export const NO_AVAILABLE_PEGAWAI = `Maaf, saat ini tidak ada pegawai yang tersedia. Coba beberapa saat lagi.`;
 export const SESSION_QNA_EXPIRED_MESSAGE = `Sesi QNA telah ditutup.`;

@@ -60,7 +60,7 @@ async function handleSessionExpiration(client, recipient) {
 
 /**
  * Memeriksa kedaluwarsa sesi untuk setiap penerima dalam objek SESSION_STATUS.
- * Jika sesi telah tidak aktif selama lebih dari 3 menit (180000 ms), sesi akan dianggap kedaluwarsa dan
+ * Jika sesi telah tidak aktif selama lebih dari 6 menit (360000 ms), sesi akan dianggap kedaluwarsa dan
  * fungsi handleSessionExpiration akan dipanggil untuk menangani kedaluwarsa sesi tersebut.
  *
  * @function
@@ -116,40 +116,9 @@ async function start(client) {
         const isBlocked = await handleSpamProtection(botPhoneNumber, userPhoneNumber, message);
 
         let responseText = "";
-        let isBroadcast = false; // Default to false unless a broadcast is initiated
 
         // Handle spam protection
         // if (isBlocked) {
-        //     return;
-        // }
-
-        // Handle button replies
-        // if (message.type === 'button_reply') {
-        //     const { id: buttonId } = message;
-        //     const uniqueId = buttonId.split('_')[1];
-
-        //     console.log(`Button ID: ${buttonId}`);
-        //     console.log(`Extracted Unique ID: ${uniqueId}`);
-
-        //     SESSION_STATUS[uniqueId] = {
-        //         lastActive: Date.now(),
-        //         optionSession: "4",
-        //         businessPhoneNumberId: botPhoneNumber,
-        //         pegawaiPhoneNumber: userPhoneNumber
-        //     };
-
-        //     availablePegawai = availablePegawai.filter(number => number !== userPhoneNumber);
-
-        //     console.log(`Updated session status for user ID ${uniqueId}:`, SESSION_STATUS[uniqueId]);
-        //     console.log(`Updated available staff list:`, availablePegawai);
-
-        //     try {
-        //         await sendWhatsAppMessage(client, uniqueId, `${CONNECTED_WITH_PEGAWAI}${getStaffNameByNumber(userPhoneNumber)}`);
-        //         console.log(`Confirmation message sent to user ID ${uniqueId}.`);
-        //     } catch (error) {
-        //         console.error(`Failed to send confirmation message to user ID ${uniqueId}:`, error.message);
-        //     }
-
         //     return;
         // }
 
@@ -169,8 +138,6 @@ async function start(client) {
                 };
                 return;
             }
-        } else if (message.type === 'status') { // webhook only
-            return;
         } else {
             await sendWhatsAppMessage(client, userPhoneNumber, BOT_ERROR);
             return;
@@ -191,6 +158,7 @@ async function start(client) {
             SESSION_STATUS[userPhoneNumber].lastActive = Date.now();
             const currentMenu = MENU_STRUCTURE[SESSION_STATUS[userPhoneNumber].optionSession];
 
+            // back to main menu
             if (userMessage === "0") {
                 SESSION_STATUS[userPhoneNumber] = {
                     lastActive: Date.now(),
@@ -198,6 +166,8 @@ async function start(client) {
                     businessPhoneNumberId: botPhoneNumber
                 };
                 responseText = MENU_STRUCTURE["0"].message;
+            
+            // main code when in session
             } else if (optionSession && optionSession != "0") {
                 console.log("SESSION == " , SESSION_STATUS);
                 
@@ -259,11 +229,10 @@ async function start(client) {
                         responseText = WRONG_COMMAND + MENU_STRUCTURE[SESSION_STATUS[userPhoneNumber].optionSession].message + BACK_TO_MENU;
                     }
                 }
+            // first valid message
             } else if (isValidOption) {
                 SESSION_STATUS[userPhoneNumber].optionSession = userMessage;
-                if (userMessage === "1") {
-                    responseText = MENU_STRUCTURE[SESSION_STATUS[userPhoneNumber].optionSession].message + BACK_TO_MENU;
-                } else if (userMessage === "6") {
+                if (userMessage === "6") {
                     responseText = OPTION_AI + BACK_TO_MENU;
                     await sendWhatsAppMessage(client, userPhoneNumber, responseText);
                     SESSION_STATUS[userPhoneNumber] = {
@@ -272,9 +241,6 @@ async function start(client) {
                         optionSession: "6"
                     };
                     return
-                } else if (userMessage === "88") {
-                    responseText = OPTION_FOUR + BACK_TO_MENU;
-                    isBroadcast = await pegawaiBroadcast(client, availablePegawai, userMessage, userPhoneNumber);
                 } else {
                     responseText = MENU_STRUCTURE[SESSION_STATUS[userPhoneNumber].optionSession].message + BACK_TO_MENU
                 }
@@ -286,7 +252,7 @@ async function start(client) {
                     optionSession: "0"
                 };
             }
-
+            // send ai response and follow up another "Kirim pertanyaan untuk AI:"
             if (SESSION_STATUS[userPhoneNumber].optionSession == "6") {
                 await sendWhatsAppMessage(client, userPhoneNumber, responseText)
                 await sendWhatsAppMessage(client, userPhoneNumber, OPTION_AI + BACK_TO_MENU)
@@ -294,6 +260,7 @@ async function start(client) {
                     ...SESSION_STATUS[userPhoneNumber],
                     lastActive: Date.now(),
                 };
+            // just send
             } else {
                 await sendWhatsAppMessage(client, userPhoneNumber, responseText);
                 SESSION_STATUS[userPhoneNumber] = {
