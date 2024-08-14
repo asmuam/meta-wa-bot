@@ -316,3 +316,66 @@ client ==  Whatsapp {
   connected: true
 }
 
+
+[
+  {
+  "id":155,
+  "value":agama
+  },
+  {
+  "id":40,
+  "value":gender
+  },
+  {
+  "id":153,
+  "value":geografi
+  },
+  {
+  "id":151,
+  "value":iklim
+  },
+  {
+  "id":26,
+  "value":indeks-pembangunan-manusia
+  },
+  {
+  "id":23,
+  "value":kemiskinan
+  },
+  {
+  "id":12,
+  "value":kependudukan
+  },
+  {
+  "id":30,
+  "value":kesehatan
+  },
+  {
+  "id":5,
+  "value":konsumsi-dan-pengeluaran
+  },
+  {
+  "id":101,
+  "value":pemerintahan
+  },
+  {
+  "id":28,
+  "value":pendidikan
+  },
+  {
+  "id":29,
+  "value":perumahan
+  },
+  {
+  "id":154,
+  "value":politik-dan-keamanan
+  },
+  {
+  "id":27,
+  "value":sosial-budaya
+  },
+  {
+  "id":6,
+  "value":tenaga-kerja
+  }
+]

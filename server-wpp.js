@@ -15,7 +15,7 @@
  * along with WPPConnect.  If not, see <https://www.gnu.org/licenses/>.
  */
 import wppconnect from "@wppconnect-team/wppconnect";
-import { MAX_MESSAGES_PER_MINUTE, SPAM_THRESHOLD, HOME_MESSAGE, BACK_ONLINE, WRONG_COMMAND, OPTION_ONE, BACK_TO_MENU, OPTION_TWO, OPTION_THREE, OPTION_FOUR, APP, VALID_OPTIONS, WEBHOOK_VERIFY_TOKEN, GRAPH_API_TOKEN, PORT, SESSION_STATUS, PEGAWAI_NUMBERS, CONNECTED_WITH_PEGAWAI, SESSION_LIMIT, NO_AVAILABLE_PEGAWAI, UNSUPPORTED_TYPE_MESSAGE, SESSION_EXPIRED_MESSAGE, SESSION_QNA_EXPIRED_MESSAGE, BOT_ERROR, BOT_NUMBER, BOT_NAME, MENU_STRUCTURE } from "./const.js";
+import { MAX_MESSAGES_PER_MINUTE, SPAM_THRESHOLD, HOME_MESSAGE, BACK_ONLINE, WRONG_COMMAND, OPTION_ONE, BACK_TO_MENU, OPTION_TWO, OPTION_FOUR, APP, VALID_OPTIONS, WEBHOOK_VERIFY_TOKEN, GRAPH_API_TOKEN, PORT, SESSION_STATUS, PEGAWAI_NUMBERS, CONNECTED_WITH_PEGAWAI, SESSION_LIMIT, NO_AVAILABLE_PEGAWAI, UNSUPPORTED_TYPE_MESSAGE, SESSION_EXPIRED_MESSAGE, SESSION_QNA_EXPIRED_MESSAGE, BOT_ERROR, BOT_NUMBER, BOT_NAME, MENU_STRUCTURE, NOT_IN_WORKING_HOURS, OPTION_AI } from "./const.js";
 import { isPegawaiPhoneNumberInSession } from "./func.js";
 import { handleStatBoy, handleStatGen } from "./statsHandlers.js";
 import { handleGeminiResponse } from "./aiHandlers.js";
@@ -125,34 +125,34 @@ async function start(client) {
         // }
 
         // Handle button replies
-        if (message.type === 'button_reply') {
-            const { id: buttonId } = message;
-            const uniqueId = buttonId.split('_')[1];
+        // if (message.type === 'button_reply') {
+        //     const { id: buttonId } = message;
+        //     const uniqueId = buttonId.split('_')[1];
 
-            console.log(`Button ID: ${buttonId}`);
-            console.log(`Extracted Unique ID: ${uniqueId}`);
+        //     console.log(`Button ID: ${buttonId}`);
+        //     console.log(`Extracted Unique ID: ${uniqueId}`);
 
-            SESSION_STATUS[uniqueId] = {
-                lastActive: Date.now(),
-                optionSession: "4",
-                businessPhoneNumberId: botPhoneNumber,
-                pegawaiPhoneNumber: userPhoneNumber
-            };
+        //     SESSION_STATUS[uniqueId] = {
+        //         lastActive: Date.now(),
+        //         optionSession: "4",
+        //         businessPhoneNumberId: botPhoneNumber,
+        //         pegawaiPhoneNumber: userPhoneNumber
+        //     };
 
-            availablePegawai = availablePegawai.filter(number => number !== userPhoneNumber);
+        //     availablePegawai = availablePegawai.filter(number => number !== userPhoneNumber);
 
-            console.log(`Updated session status for user ID ${uniqueId}:`, SESSION_STATUS[uniqueId]);
-            console.log(`Updated available staff list:`, availablePegawai);
+        //     console.log(`Updated session status for user ID ${uniqueId}:`, SESSION_STATUS[uniqueId]);
+        //     console.log(`Updated available staff list:`, availablePegawai);
 
-            try {
-                await sendWhatsAppMessage(client, uniqueId, `${CONNECTED_WITH_PEGAWAI}${getStaffNameByNumber(userPhoneNumber)}`);
-                console.log(`Confirmation message sent to user ID ${uniqueId}.`);
-            } catch (error) {
-                console.error(`Failed to send confirmation message to user ID ${uniqueId}:`, error.message);
-            }
+        //     try {
+        //         await sendWhatsAppMessage(client, uniqueId, `${CONNECTED_WITH_PEGAWAI}${getStaffNameByNumber(userPhoneNumber)}`);
+        //         console.log(`Confirmation message sent to user ID ${uniqueId}.`);
+        //     } catch (error) {
+        //         console.error(`Failed to send confirmation message to user ID ${uniqueId}:`, error.message);
+        //     }
 
-            return;
-        }
+        //     return;
+        // }
 
         // Handle text messages
         if (message.type === 'chat') {
@@ -161,28 +161,26 @@ async function start(client) {
                 await sendWhatsAppMessage(client, userPhoneNumber, UNSUPPORTED_TYPE_MESSAGE);
                 // unsupported types message but still not in session
                 if (!(SESSION_STATUS[userPhoneNumber])) {
+                    SESSION_STATUS[userPhoneNumber] = { client: client, lastActive: Date.now(), optionSession: "0", businessPhoneNumberId: botPhoneNumber };
                     await sendWhatsAppMessage(client, userPhoneNumber, HOME_MESSAGE);
                 }
+                SESSION_STATUS[userPhoneNumber] = {
+                    ...SESSION_STATUS[userPhoneNumber],
+                    lastActive: Date.now(),
+                };
                 return;
             }
-        } else if (message.type === 'status') {
+        } else if (message.type === 'status') { // webhook only
             return;
         } else {
-            await sendWhatsAppMessage(client, userPhoneNumber, UNSUPPORTED_TYPE_MESSAGE);
+            await sendWhatsAppMessage(client, userPhoneNumber, BOT_ERROR);
             return;
         }
 
         // Handle First Message
         if ((messageTimestamp > serverOnlineTime) && (!(SESSION_STATUS[userPhoneNumber]))) {
-            const userMessage = message.body.trim().toLowerCase();
-            // menangani pesan yang dikirim pegawai agar diteruskan ke penanya, percakapan pegawai sbg CS akan selalu dianggap first message karena sesi pegawai dgn bot tdk dibuat
-            if (isPegawaiPhoneNumberInSession(SESSION_STATUS, userPhoneNumber)) {
-                responseText = userMessage;
-                await sendWhatsAppMessage(client, getUserPhoneNumberInSession(SESSION_STATUS, userPhoneNumber), responseText);
-                return;
-            }
             SESSION_STATUS[userPhoneNumber] = { client: client, lastActive: Date.now(), optionSession: "0", businessPhoneNumberId: botPhoneNumber };
-            await sendWhatsAppMessage(client, userPhoneNumber, HOME_MESSAGE);
+            await sendWhatsAppMessage(client, userPhoneNumber, MENU_STRUCTURE["0"].message);
             return;
         }
 
@@ -194,10 +192,6 @@ async function start(client) {
             SESSION_STATUS[userPhoneNumber].lastActive = Date.now();
             const currentMenu = MENU_STRUCTURE[SESSION_STATUS[userPhoneNumber].optionSession];
 
-            console.log("CURRENT MENU == ", currentMenu);
-            console.log("SESSION == ", SESSION_STATUS);
-            console.log("USER MESSAGE == ", userMessage);
-
             if (userMessage === "0") {
                 SESSION_STATUS[userPhoneNumber] = {
                     lastActive: Date.now(),
@@ -206,40 +200,81 @@ async function start(client) {
                 };
                 responseText = MENU_STRUCTURE["0"].message;
             } else if (optionSession && optionSession != "0") {
-                if (optionSession === "2") {
+                if (optionSession === "6") {
                     await client.startTyping(userPhoneNumber);
                     responseText = await handleGeminiResponse(userMessage);
                     await client.stopTyping(userPhoneNumber);
                 }
-                if (optionSession === "3") {
+                if (optionSession === "88") { // reserved
                     await sendMessageToPegawai(client, SESSION_STATUS[userPhoneNumber].pegawaiPhoneNumber, userMessage, userPhoneNumber);
                     return;
-                }                
-                if(currentMenu){
+                }
+                if (currentMenu) {
                     if (currentMenu.options?.[`${SESSION_STATUS[userPhoneNumber]?.optionSession}.${userMessage}`]) {
                         console.log("================");
+                        if (currentMenu == MENU_STRUCTURE["1.7"]) {
+                            SESSION_STATUS[userPhoneNumber] = {
+                                ...SESSION_STATUS[userPhoneNumber],
+                                lastActive: Date.now(),
+                            };
+                            return
+                        }
                         if (userMessage === "99") {
                             SESSION_STATUS[userPhoneNumber].optionSession = SESSION_STATUS[userPhoneNumber].optionSession.split('.').slice(0, -1).join('.') || "0";
                         } else {
                             SESSION_STATUS[userPhoneNumber].optionSession = `${SESSION_STATUS[userPhoneNumber].optionSession}.${userMessage}`;
                         }
                         const newMenu = MENU_STRUCTURE[SESSION_STATUS[userPhoneNumber].optionSession];
-                        responseText = (newMenu ? newMenu.message : WRONG_COMMAND + MENU_STRUCTURE[SESSION_STATUS[userPhoneNumber].optionSession].message) + BACK_TO_MENU;
+                        if (newMenu == MENU_STRUCTURE["1.7"]) {
+                            const now = new Date();
+                            const startHour = 8;
+                            const endHour = 15;
+                            const endMinute = 30;
+                        
+                            const currentHour = now.getHours();
+                            const currentMinute = now.getMinutes();
+                        
+                            const isWorkHour = (currentHour > startHour && currentHour < endHour) ||
+                                               (currentHour === startHour && currentMinute >= 0) ||
+                                               (currentHour === endHour && currentMinute <= endMinute);
+                        
+                            if (isWorkHour) {
+                                console.log("It's within working hours.");
+                                // Additional logic for working hours
+                            } else {
+                                console.log("It's outside working hours.");
+                                await sendWhatsAppMessage(client, userPhoneNumber, NOT_IN_WORKING_HOURS);
+                                SESSION_STATUS[userPhoneNumber] = {
+                                    ...SESSION_STATUS[userPhoneNumber],
+                                    lastActive: Date.now(),
+                                };
+                                return
+                                // Additional logic for outside working hours
+                            }
+                        }
+                        
+                        // Check if newMenu's message is the same as HOME_MESSAGE
+                        responseText = newMenu
+                            ? (newMenu.message == HOME_MESSAGE ? newMenu.message : newMenu.message + BACK_TO_MENU)
+                            : WRONG_COMMAND + MENU_STRUCTURE[SESSION_STATUS[userPhoneNumber].optionSession].message + BACK_TO_MENU;
                     } else {
                         responseText = WRONG_COMMAND + MENU_STRUCTURE[SESSION_STATUS[userPhoneNumber].optionSession].message + BACK_TO_MENU;
                     }
                 }
             } else if (isValidOption) {
                 SESSION_STATUS[userPhoneNumber].optionSession = userMessage;
-                console.log("SESSION == ",SESSION_STATUS);
-                
                 if (userMessage === "1") {
                     responseText = MENU_STRUCTURE[SESSION_STATUS[userPhoneNumber].optionSession].message + BACK_TO_MENU;
-                } else if (userMessage === "2") {
+                } else if (userMessage === "6") {
                     responseText = OPTION_THREE + BACK_TO_MENU;
                     await sendWhatsAppMessage(client, userPhoneNumber, responseText);
+                    SESSION_STATUS[userPhoneNumber] = {
+                        ...SESSION_STATUS[userPhoneNumber],
+                        lastActive: Date.now(),
+                        optionSession: "0"
+                    };
                     return
-                } else if (userMessage === "3") {
+                } else if (userMessage === "88") {
                     responseText = OPTION_FOUR + BACK_TO_MENU;
                     isBroadcast = await pegawaiBroadcast(client, availablePegawai, userMessage, userPhoneNumber);
                 }
@@ -252,19 +287,26 @@ async function start(client) {
                 };
             }
 
-            if (SESSION_STATUS[userPhoneNumber].optionSession == "2"){
+            if (SESSION_STATUS[userPhoneNumber].optionSession == "2") {
                 await sendWhatsAppMessage(client, userPhoneNumber, responseText)
-                await sendWhatsAppMessage(client, userPhoneNumber, OPTION_THREE + BACK_TO_MENU)
+                await sendWhatsAppMessage(client, userPhoneNumber, OPTION_AI + BACK_TO_MENU)
+                SESSION_STATUS[userPhoneNumber] = {
+                    ...SESSION_STATUS[userPhoneNumber],
+                    lastActive: Date.now(),
+                };
             } else {
                 await sendWhatsAppMessage(client, userPhoneNumber, responseText);
+                SESSION_STATUS[userPhoneNumber] = {
+                    ...SESSION_STATUS[userPhoneNumber],
+                    lastActive: Date.now(),
+                };
             }
 
-            if (!isBroadcast && SESSION_STATUS[userPhoneNumber].optionSession == "3") {                
+            if (!isBroadcast && SESSION_STATUS[userPhoneNumber].optionSession == "3") {
                 await sendWhatsAppMessage(client, userPhoneNumber, NO_AVAILABLE_PEGAWAI + HOME_MESSAGE);
                 SESSION_STATUS[userPhoneNumber] = {
                     ...SESSION_STATUS[userPhoneNumber],
                     lastActive: Date.now(),
-                    optionSession: "0"
                 };
             }
         }
