@@ -1,3 +1,4 @@
+flow untuk webhook
 -pengguna bot punya 2 webhook (value-messages & value-statuses)
 -pegawai punya 2 webhook (value-messages & value-statuses)
 -untuk value-statuses langsung respon dgn res.sendStatus(200)
@@ -36,15 +37,16 @@ json webhook
 
 MIGRATE TO WPPCONNECT
 
+This is what WPPCONNECT message looks like
 message ==  {
-  id: 'false_6281391460274@c.us_D03AFFD9529EC3CD1A25666700E1C73F',
+  id: 'id',
   viewed: false,
-  body: 'Berapa pdrb Boyolali 2021?',
+  body: 'text_message',
   type: 'chat',
   t: 1722578968,
-  notifyName: 'naufal.abiogaa',
-  from: '6281391460274@c.us',
-  to: '6285183098108@c.us',
+  notifyName: '',
+  from: 'bot_number@c.us',
+  to: 'phone_number@c.us',
   ack: 1,
   invis: false,
   isNewMsg: true,
@@ -88,11 +90,11 @@ message ==  {
   hostedBizEncStateMismatch: false,
   senderOrRecipientAccountTypeHosted: false,
   placeholderCreatedWhenAccountIsHosted: false,
-  chatId: '6281391460274@c.us',
+  chatId: 'phone_number@c.us',
   fromMe: false,
   sender: {
-    id: '6281391460274@c.us',
-    name: '63 ST NAUFAL RAFFIE ABIOGA',
+    id: 'phone_number@c.us',
+    name: '',
     shortName: '',
     pushname: 'naufal.abiogaa',
     type: 'in',
@@ -102,28 +104,28 @@ message ==  {
     isContactSyncCompleted: 1,
     textStatusLastUpdateTime: -1,
     syncToAddressbook: true,
-    formattedName: '63 ST NAUFAL RAFFIE ABIOGA',
+    formattedName: '',
     isMe: false,
     isMyContact: true,
     isPSA: false,
     isUser: true,
     isWAContact: true,
     profilePicThumbObj: {
-      eurl: 'https://pps.whatsapp.net/v/t61.24694-24/240048852_451674022637887_3359138445488398827_n.jpg?ccb=11-4&oh=01_Q5AaILENnlUVCyNLjLhfO99Fu_OqF6NkNRLY7bOuCv0tB1Sy&oe=66B9872C&_nc_sid=e6ed6c&_nc_cat=100',
+      eurl: '',
       id: '6281391460274@c.us',
-      img: 'https://media-sin6-2.cdn.whatsapp.net/v/t61.24694-24/240048852_451674022637887_3359138445488398827_n.jpg?stp=dst-jpg_s96x96&ccb=11-4&oh=01_Q5AaIOI_0i25h4FwVyjrCO0I0Wy33gt9evmjb_5UVFVJMgHq&oe=66B9872C&_nc_sid=e6ed6c&_nc_cat=100',
-      imgFull: 'https://media-sin6-2.cdn.whatsapp.net/v/t61.24694-24/240048852_451674022637887_3359138445488398827_n.jpg?ccb=11-4&oh=01_Q5AaILENnlUVCyNLjLhfO99Fu_OqF6NkNRLY7bOuCv0tB1Sy&oe=66B9872C&_nc_sid=e6ed6c&_nc_cat=100',
-      tag: '1630939805'
+      img: '',
+      imgFull: '',
+      tag: ''
     },
     msgs: null
   },
   timestamp: 1722578968,
-  content: 'Berapa pdrb Boyolali 2021?',
+  content: 'text_message',
   isGroupMsg: false,
   mediaData: {}
 }
 
-
+This is what WPPCONNECT client looks like
 client ==  Whatsapp {
   page: CdpPage { _isDragging: false, _timeoutSettings: TimeoutSettings {} },
   autoCloseInterval: null,
@@ -164,7 +166,7 @@ client ==  Whatsapp {
     browserWS: '',
     browserArgs: [ '' ],
     puppeteerOptions: {
-      userDataDir: 'D:\\STIS\\Magang\\bot_wa_js\\tokens\\boyolaliBot',
+      userDataDir: 'dir',
       executablePath: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
     },
     disableWelcome: false,
@@ -202,7 +204,7 @@ client ==  Whatsapp {
     disableGoogleAnalytics: true,
     googleAnalyticsId: null,
     poweredBy: 'WPPConnect',
-    session: 'boyolaliBot',
+    session: 'session_name',
     phoneNumber: '6285183098108',
     catchLinkCode: [Function: catchLinkCode],
     sessionToken: undefined
@@ -315,67 +317,3 @@ client ==  Whatsapp {
   },
   connected: true
 }
-
-
-[
-  {
-  "id":155,
-  "value":agama
-  },
-  {
-  "id":40,
-  "value":gender
-  },
-  {
-  "id":153,
-  "value":geografi
-  },
-  {
-  "id":151,
-  "value":iklim
-  },
-  {
-  "id":26,
-  "value":indeks-pembangunan-manusia
-  },
-  {
-  "id":23,
-  "value":kemiskinan
-  },
-  {
-  "id":12,
-  "value":kependudukan
-  },
-  {
-  "id":30,
-  "value":kesehatan
-  },
-  {
-  "id":5,
-  "value":konsumsi-dan-pengeluaran
-  },
-  {
-  "id":101,
-  "value":pemerintahan
-  },
-  {
-  "id":28,
-  "value":pendidikan
-  },
-  {
-  "id":29,
-  "value":perumahan
-  },
-  {
-  "id":154,
-  "value":politik-dan-keamanan
-  },
-  {
-  "id":27,
-  "value":sosial-budaya
-  },
-  {
-  "id":6,
-  "value":tenaga-kerja
-  }
-]

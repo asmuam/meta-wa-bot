@@ -2,7 +2,10 @@ from flask import Flask, request, jsonify
 import json
 import os
 import logging
-from parserPDF import create_chroma_db_from_json, get_relevant_passage, make_prompt, genai
+from bot_wa_js.aiUtil import create_chroma_db_from_json, get_relevant_passage, make_prompt, genai
+
+from dotenv import load_dotenv
+load_dotenv() 
 
 app = Flask(__name__)
 
@@ -33,5 +36,6 @@ def get_answer():
 
 if __name__ == "__main__":
     host = '0.0.0.0'
-    port = 5000
+    port =os.getenv('PORT_PY')
     app.run(host=host, port=port, debug=True)
+    print("Python Server Runnig on Port : ", port)

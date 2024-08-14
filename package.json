@@ -5,10 +5,9 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "start": "concurrently \"node server.js\" \"ssh -R kiagengboyolali:80:localhost:3000 serveo.net\"",
-    "dev:serveo": "concurrently \"nodemon server.js\" \"ssh -R kiagengboyolali:80:localhost:3000 serveo.net\"",
-    "dev:localtunnel": "concurrently \"nodemon server.js\" \"lt --port 3000\"",
-    "dev": "nodemon server.js",
+    "dev:serveo": "concurrently \"nodemon server-webhook.js\" \"ssh -R kiagengboyolali:80:localhost:3000 serveo.net\"",
+    "dev:localtunnel": "concurrently \"nodemon server-webhook.js\" \"lt --port 3000\"",
+    "dev": "nodemon server-webhook.js",
     "dev:wpp": "nodemon --ignore tokens server-wpp.js",
     "start:python": "python server.py",
     "start:node": "nodemon --ignore tokens server-wpp.js",
