@@ -276,17 +276,8 @@ async function start(client) {
 async function sendWhatsAppMessage(client, to, message) {
     try {
         await markMessageAsSeen(client, to);
-
-        // Tunggu sejenak sebelum memulai "typing"
-        await new Promise(resolve => setTimeout(resolve, 2000)); // 3 detik, sesuaikan jika perlu
-
         await client.startTyping(to);
-
-        // Tunggu 2 detik sebelum mengirim pesan
-        await new Promise(resolve => setTimeout(resolve, 2000));
-
         await client.sendText(to, message);
-
         await client.stopTyping(to);
     } catch (error) {
         console.error(`Failed to send message to ${to}:`, error.message);
