@@ -147,25 +147,13 @@ export async function handleGeminiResponse(userMessage) {
         threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_HIGH,
       },
       {
-        category: HarmCategory.HARM_CATEGORY_VIOLENCE,
+        category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
         threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_HIGH,
       },
       {
-        category: HarmCategory.HARM_CATEGORY_SELF_HARM,
-        threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
-      },
-      {
-        category: HarmCategory.HARM_CATEGORY_ADULT_CONTENT,
+        category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
         threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_HIGH,
-      },
-      {
-        category: HarmCategory.HARM_CATEGORY_TOXICITY,
-        threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_HIGH,
-      },
-      {
-        category: HarmCategory.HARM_CATEGORY_MISINFORMATION,
-        threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_HIGH,
-      },
+      }
     ],
   });
   
