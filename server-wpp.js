@@ -95,12 +95,14 @@ setInterval(checkSessionExpiration, 60000);
 
 wppconnect
     .create({
-        session: BOT_NAME, //Pass the name of the client you want to start the bot
+        session: BOT_NAME, // Pass the name of the client you want to start the bot
         phoneNumber: BOT_NUMBER,
         catchLinkCode: (str) => console.log('Code: ' + str),
+        protocolTimeout: 60000, // Set the timeout to 60 seconds or adjust as needed
     })
     .then((client) => start(client))
     .catch((error) => console.log(error));
+
 
 async function start(client) {
     client.onMessage(async (message) => {
@@ -108,7 +110,7 @@ async function start(client) {
             return
         }
         // console.log("client == ", client);
-        console.log("message == ", message);
+        // console.log("message == ", message);
         // console.log("session == ", SESSION_STATUS);
         const userPhoneNumber = message.from;
         const botPhoneNumber = message.to;
@@ -168,24 +170,21 @@ async function start(client) {
                 responseText = MENU_STRUCTURE["0"].message;
             
             // main code when in session
-            } else if (optionSession && optionSession != "0") {
-                console.log("SESSION == " , SESSION_STATUS);
-                
+            } else if (optionSession && optionSession != "0") {                
                 if (optionSession === "6") {
                     await client.startTyping(userPhoneNumber);
                     responseText = await handleGeminiResponse(userMessage);
                     await client.stopTyping(userPhoneNumber);
                 }
                 if (currentMenu && optionSession!="6") {
+                    if (currentMenu == MENU_STRUCTURE["1.7"]) {
+                        SESSION_STATUS[userPhoneNumber] = {
+                            ...SESSION_STATUS[userPhoneNumber],
+                            lastActive: Date.now(),
+                        };
+                        return
+                    }
                     if (currentMenu.options?.[`${SESSION_STATUS[userPhoneNumber]?.optionSession}.${userMessage}`]) {
-                        console.log("================");
-                        if (currentMenu == MENU_STRUCTURE["1.7"]) {
-                            SESSION_STATUS[userPhoneNumber] = {
-                                ...SESSION_STATUS[userPhoneNumber],
-                                lastActive: Date.now(),
-                            };
-                            return
-                        }
                         if (userMessage === "99") {
                             SESSION_STATUS[userPhoneNumber].optionSession = SESSION_STATUS[userPhoneNumber].optionSession.split('.').slice(0, -1).join('.') || "0";
                         } else {
@@ -194,9 +193,9 @@ async function start(client) {
                         const newMenu = MENU_STRUCTURE[SESSION_STATUS[userPhoneNumber].optionSession];
                         if (newMenu == MENU_STRUCTURE["1.7"]) {
                             const now = new Date();
-                            const startHour = 8;
-                            const endHour = 15;
-                            const endMinute = 30;
+                            const startHour = 7;
+                            const endHour = 16;
+                            const endMinute = 0;
                         
                             const currentHour = now.getHours();
                             const currentMinute = now.getMinutes();
@@ -207,6 +206,10 @@ async function start(client) {
                         
                             if (isWorkHour) {
                                 console.log("It's within working hours.");
+                                SESSION_STATUS[userPhoneNumber] = {
+                                    ...SESSION_STATUS[userPhoneNumber],
+                                    lastActive: Date.now(),
+                                };
                                 // Additional logic for working hours
                             } else {
                                 console.log("It's outside working hours.");
@@ -218,9 +221,7 @@ async function start(client) {
                                 return
                                 // Additional logic for outside working hours
                             }
-                        }
-                        console.log("NEW MENU",newMenu);
-                        
+                        }                        
                         // Check if newMenu's message is the same as HOME_MESSAGE + FOOTER
                         responseText = newMenu
                             ? (newMenu.message == (HOME_MESSAGE + FOOTER) ? newMenu.message : (newMenu.message + BACK_TO_MENU))

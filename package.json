@@ -12,12 +12,12 @@
     "start:python": "python server.py",
     "start:node": "nodemon --ignore tokens server-wpp.js",
     "dev:wpp-py": "concurrently \"npm run start:python\" \"npm run start:node\""
-
   },
   "author": "WhatsApp Team",
   "license": "MIT",
   "dependencies": {
     "@google/generative-ai": "^0.16.0",
+    "@wppconnect-team/wppconnect": "^1.33.0",
     "axios": "^1.7.2",
     "compromise": "13.1.1",
     "concurrently": "^8.2.2",
@@ -25,8 +25,7 @@
     "express": "^4.19.2",
     "natural": "7.1.0",
     "nodemon": "^3.1.4",
-    "raw-body": "^2.5.2",
-    "@wppconnect-team/wppconnect":"*"
+    "raw-body": "^2.5.2"
   },
   "engines": {
     "node": ">=18.0.0"

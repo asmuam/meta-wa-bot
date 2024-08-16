@@ -317,3 +317,6 @@ client ==  Whatsapp {
   },
   connected: true
 }
+
+
+[1] Failed to send message to 6285282379729@c.us: Runtime.callFunctionOn timed out. Increase the 'protocolTimeout' setting in launch/connect calls for a higher timeout if needed.

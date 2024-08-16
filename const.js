@@ -158,11 +158,11 @@ function buildMenuFromData(statisticData) {
             options: []
         },
         "2": {
-            message: `Silahkan Mengisi Form dibawah untuk Konsultasi Statistik\nhttp://s.bps.go.id/pengaduanboyolali`,
+            message: `Silahkan Mengisi Form dibawah untuk Konsultasi Statistik\nhttps://forms.gle/mbPbncAHuKYL3xLA6`,
             options: []
         },
         "3": {
-            message: `Silahkan Kunjungi Website Silastik untuk Penjualan ProdukStatistik\nhttps://silastik.bps.go.id`,
+            message: `Silahkan Kunjungi Website Silastik untuk Penjualan Produk Statistik\nhttps://silastik.bps.go.id`,
             options: []
         },
         "4": {
