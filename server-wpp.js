@@ -124,6 +124,7 @@ import puppeteer from 'puppeteer';
   
   const browser = await puppeteer.launch();
   console.log(`Puppeteer executable path: ${puppeteer.executablePath()}`);
+  console.log(`Puppeteer cache directory: ${puppeteer.defaultCacheDirectory()}`);
   await browser.close();
 })();
 
