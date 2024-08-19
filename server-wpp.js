@@ -17,12 +17,14 @@
 import wppconnect from "@wppconnect-team/wppconnect";
 import { HOME_MESSAGE, WRONG_COMMAND, BACK_TO_MENU, VALID_OPTIONS, SESSION_STATUS, SESSION_LIMIT, UNSUPPORTED_TYPE_MESSAGE, SESSION_EXPIRED_MESSAGE, SESSION_QNA_EXPIRED_MESSAGE, BOT_ERROR, BOT_NUMBER, BOT_NAME, MENU_STRUCTURE, NOT_IN_WORKING_HOURS, OPTION_AI, FOOTER, app } from "./const.js";
 import { handleGeminiResponse } from "./aiHandlers.js";
+import { pingServer } from "./ping.js";
 
 
 // Inisialisasi Online Time
 let serverOnlineTime = 0;
 
-let userActivity = {}; // To track user activity and warnings
+// Set up an interval to ping the server every 10 minutes (600000 milliseconds)
+setInterval(pingServer, 600000); // 600000 ms = 10 minutes
 
 /**
  * Menangani kedaluwarsa sesi untuk penerima tertentu.
