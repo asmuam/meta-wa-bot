@@ -12,7 +12,10 @@
     "start:python": "python server.py",
     "start:node": "nodemon --ignore tokens server-wpp.js",
     "dev:wpp-py": "concurrently \"npm run start:python\" \"npm run start:node\"",
-    "start": "node server-wpp.js"
+    "start": "node server-wpp.js",
+    "clean": "rm -rf node_modules package-lock.json ~/.cache/puppeteer",
+    "install": "npm install",
+    "rebuild": "npm run clean && npm run install"
   },
   "author": "WhatsApp Team",
   "license": "MIT",
