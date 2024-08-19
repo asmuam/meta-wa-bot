@@ -124,7 +124,6 @@ import puppeteer from 'puppeteer';
   
   const browser = await puppeteer.launch();
   console.log(`Puppeteer executable path: ${puppeteer.executablePath()}`);
-  console.log(`Puppeteer cache directory: ${puppeteer.defaultCacheDirectory()}`);
   await browser.close();
 })();
 
@@ -144,7 +143,7 @@ wppconnect
             console.error('CatchLinkCode callback executed with:', str);
             // Tambahkan lebih banyak kode log jika perlu
         },
-        protocolTimeout: 60000,
+        protocolTimeout: 120000,
     })
     .then((client) => {
         console.error('Client created successfully.');
