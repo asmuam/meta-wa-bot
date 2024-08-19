@@ -92,6 +92,21 @@ function checkSessionExpiration() {
  */
 setInterval(checkSessionExpiration, 60000);
 
+// render only
+const puppeteer = require('puppeteer-core');
+const path = require('path');
+
+puppeteer.launch({
+    executablePath: path.resolve('/opt/render/.cache/puppeteer/chrome/linux-127.0.6533.88/chrome-linux64/chrome'),
+    headless: true,
+})
+.then(browser => {
+    // Do something with the browser
+})
+.catch(error => {
+    console.error('Failed to launch browser:', error);
+});
+
 
 wppconnect
     .create({
