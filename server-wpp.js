@@ -15,19 +15,13 @@
  * along with WPPConnect.  If not, see <https://www.gnu.org/licenses/>.
  */
 import wppconnect from "@wppconnect-team/wppconnect";
-import { MAX_MESSAGES_PER_MINUTE, SPAM_THRESHOLD, HOME_MESSAGE, BACK_ONLINE, WRONG_COMMAND, OPTION_ONE, BACK_TO_MENU, OPTION_TWO, OPTION_FOUR, VALID_OPTIONS, WEBHOOK_VERIFY_TOKEN, GRAPH_API_TOKEN, PORT, SESSION_STATUS, PEGAWAI_NUMBERS, CONNECTED_WITH_PEGAWAI, SESSION_LIMIT, NO_AVAILABLE_PEGAWAI, UNSUPPORTED_TYPE_MESSAGE, SESSION_EXPIRED_MESSAGE, SESSION_QNA_EXPIRED_MESSAGE, BOT_ERROR, BOT_NUMBER, BOT_NAME, MENU_STRUCTURE, NOT_IN_WORKING_HOURS, OPTION_AI, FOOTER, app } from "./const.js";
-import { isPegawaiPhoneNumberInSession } from "./func.js";
+import { HOME_MESSAGE, WRONG_COMMAND, BACK_TO_MENU, VALID_OPTIONS, SESSION_STATUS, SESSION_LIMIT, UNSUPPORTED_TYPE_MESSAGE, SESSION_EXPIRED_MESSAGE, SESSION_QNA_EXPIRED_MESSAGE, BOT_ERROR, BOT_NUMBER, BOT_NAME, MENU_STRUCTURE, NOT_IN_WORKING_HOURS, OPTION_AI, FOOTER, app } from "./const.js";
 import { handleGeminiResponse } from "./aiHandlers.js";
-import { handlePSTResponse, pegawaiBroadcast, sendMessageToPegawai } from "./pegawaiHandlers.js"
 
-// Inisialisasi array availablePegawai dengan nomor pegawai
-let availablePegawai = PEGAWAI_NUMBERS.map(pegawai => pegawai.number);
+
 // Inisialisasi Online Time
 let serverOnlineTime = 0;
-// Simpan status pengguna yang sudah menerima balasan
-// Ini untuk mengakali jika whatsapp mengirim webhook dari pesan2 lama yg dikirim user sebelum server aktif
-// sebenarnya ada di dokumentasi tetapi untuk kemudahan dilakukan cara ini meskipun masih terdapat flaws karena webhook kadang memiliki delay yg lama
-let repliedUsers = {};
+
 let userActivity = {}; // To track user activity and warnings
 
 /**
@@ -92,70 +86,24 @@ function checkSessionExpiration() {
  */
 setInterval(checkSessionExpiration, 60000);
 
-// render only
-// import puppeteer from 'puppeteer-core';
-// import path from 'path';
-
-// const browser = await puppeteer.launch({
-//     executablePath: path.resolve('/opt/render/.cache/puppeteer/chrome/linux-127.0.6533.88/chrome-linux64/chrome'),
-//     headless: true,
-// });
-
-// console.log('Browser launched successfully.');
-import express from 'express';
-
-
-// // Middleware
-// // Middleware to parse JSON payloads
-app.use(express.json());
-
-app.get('/', (req, res) => {
-    res.send('WPPConnect service is running');
-});
-
-app.listen(80, () => {
-    console.log(`Server is listening on port ${80}`);
-});
-
-import puppeteer from 'puppeteer';
-
-const browser = await puppeteer.launch({
-    headless: true,
-    args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-        '--disable-software-rasterizer',
-        '--disable-features=site-per-process',
-    ],
-    executablePath: puppeteer.executablePath(), // Gunakan path default
-});
-
-
-(async () => {
-  console.log(`Puppeteer version: ${puppeteer.version}`);
-  
+// just checking
+(async () => {  
   const browser = await puppeteer.launch();
   console.log(`Puppeteer executable path: ${puppeteer.executablePath()}`);
+  const args = puppeteer.defaultArgs();
+  console.log('Puppeteer default arguments:', args);
   await browser.close();
 })();
 
-(async () => {
-  const args = puppeteer.defaultArgs();
-  console.log('Puppeteer default arguments:', args);
-})();
 
-
-
+// create client wpp
 wppconnect
     .create({
         session: BOT_NAME,
-        autoClose:false,
+        autoClose:false, // set waktu auto stop kode pairing
         phoneNumber: BOT_NUMBER,
         catchLinkCode: (str) => {
             console.error('Code: ' + str);
-            console.error('CatchLinkCode callback executed with:', str);
             // Tambahkan lebih banyak kode log jika perlu
         },
         catchQR: (base64Qrimg, asciiQR, attempts, urlCode) => {
@@ -164,7 +112,7 @@ wppconnect
             console.log('base64 image string qrcode: ', base64Qrimg);
             console.log('urlCode (data-ref): ', urlCode);
           },
-        protocolTimeout: 120000,
+        protocolTimeout: 120000, // set waktu timeout dari proses komunikasi
     })
     .then((client) => {
         console.error('Client created successfully.');
@@ -186,14 +134,8 @@ async function start(client) {
         const userPhoneNumber = message.from;
         const botPhoneNumber = message.to;
         const messageTimestamp = message.timestamp;
-        const isBlocked = await handleSpamProtection(botPhoneNumber, userPhoneNumber, message);
 
         let responseText = "";
-
-        // Handle spam protection
-        // if (isBlocked) {
-        //     return;
-        // }
 
         // Handle text messages
         if (message.type === 'chat') {
@@ -344,6 +286,7 @@ async function start(client) {
     });
 }
 
+// send func
 async function sendWhatsAppMessage(client, to, message) {
     try {
         await markMessageAsSeen(client, to);
@@ -354,67 +297,13 @@ async function sendWhatsAppMessage(client, to, message) {
         console.error(`Failed to send message to ${to}:`, error.message);
     }
 }
+
+// blue mark func
 async function markMessageAsSeen(client, messageId) {
     try {
         await client.sendSeen(messageId);
     } catch (error) {
         console.error(`Failed to mark message ${messageId} as seen:`, error.message);
     }
-}
-async function handleSpamProtection(businessPhoneNumberId, recipient, message) {
-    // Implement your spam protection logic here
-    if (!message) {
-        console.log("No messages found, skipping spam protection."); // if using webhooks it will ignore statuses webhook
-        return false;
-    }
-
-    // Initialize user data if not present
-    if (!userActivity[recipient]) {
-        userActivity[recipient] = { messageCount: 0, lastMessageTime: Date.now(), warnings: 0 };
-        console.log(`Initialized user data for ${recipient}.`);
-    }
-
-    const currentTime = Date.now();
-    const userData = userActivity[recipient];
-
-    // Reset message count if more than a minute has passed
-    if (currentTime - userData.lastMessageTime > 60000) {  // 1 minute in milliseconds
-        userData.messageCount = 0;
-        console.log(`Reset message count for ${recipient} due to inactivity.`);
-    }
-
-    userData.messageCount += 1;
-    userData.lastMessageTime = currentTime;
-
-    console.log(`User ${recipient} has sent ${userData.messageCount} messages.`);
-
-    // Check for spam behavior
-    if (userData.messageCount > MAX_MESSAGES_PER_MINUTE) {
-        userData.warnings += 1;
-        userData.messageCount = 0; // Reset the message count after a warning
-
-        console.log(`User ${recipient} exceeded message limit. Warnings: ${userData.warnings}`);
-
-        if (userData.warnings >= SPAM_THRESHOLD) {
-            // Block user or take action (e.g., notify admin)
-            try {
-                await sendWhatsAppMessage(businessPhoneNumberId, recipient, "You have been blocked due to excessive messaging.");
-                console.log(`User ${recipient} has been blocked.`);
-            } catch (error) {
-                console.error("Failed to send block message:", error);
-            }
-            // Optionally, add the user to a blacklist
-            return true;
-        } else {
-            // Send warning message
-            try {
-                await sendWhatsAppMessage(businessPhoneNumberId, recipient, `Warning: Please reduce the number of messages. You have ${SPAM_THRESHOLD - userData.warnings} warnings left.`);
-                console.log(`Warning sent to user ${recipient}.`);
-            } catch (error) {
-                console.error("Failed to send warning message:", error);
-            }
-        }
-    }
-    return false; // Example return value
 }
 
