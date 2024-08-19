@@ -144,6 +144,12 @@ wppconnect
             console.error('CatchLinkCode callback executed with:', str);
             // Tambahkan lebih banyak kode log jika perlu
         },
+        catchQR: (base64Qrimg, asciiQR, attempts, urlCode) => {
+            console.log('Number of attempts to read the qrcode: ', attempts);
+            console.log('Terminal qrcode: ', asciiQR);
+            console.log('base64 image string qrcode: ', base64Qrimg);
+            console.log('urlCode (data-ref): ', urlCode);
+          },
         protocolTimeout: 120000,
     })
     .then((client) => {
