@@ -170,7 +170,7 @@ export async function handleGeminiResponse(userMessage) {
   });
   
   try {
-    const response = await axios.post('http://localhost:5000/get_prompt', {
+    const response = await axios.post('https://meta-wa-bot-va2d.onrender.com/get_prompt', {
       query: userMessage
     }, {
       headers: {

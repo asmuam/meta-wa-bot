@@ -37,5 +37,5 @@ def get_answer():
 if __name__ == "__main__":
     host = '0.0.0.0'
     port =os.getenv('PORT_PY')
-    app.run(host=host, port=port, debug=True)
+    app.run(host=host,debug=True)
     print("Python Server Runnig on Port : ", port)
