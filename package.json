@@ -1,5 +1,5 @@
 {
-  "name": "whatsapp-echo-webhook",
+  "name": "whatsapp-bot",
   "version": "1.0.0",
   "description": "An example WhatsApp webhook server https://developers.facebook.com/docs/whatsapp/sample-app-endpoints",
   "main": "server.js",
