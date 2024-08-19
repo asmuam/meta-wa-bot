@@ -158,7 +158,7 @@ async function start(client) {
                 return;
             }
         } else {
-            await sendWhatsAppMessage(client, userPhoneNumber, BOT_ERROR);
+            await sendWhatsAppMessage(client, userPhoneNumber, UNSUPPORTED_TYPE_MESSAGE);
             return;
         }
 
