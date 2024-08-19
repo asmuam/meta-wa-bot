@@ -102,20 +102,20 @@ setInterval(checkSessionExpiration, 60000);
 // });
 
 // console.log('Browser launched successfully.');
-// import express from 'express';
+import express from 'express';
 
 
 // // Middleware
 // // Middleware to parse JSON payloads
-// app.use(express.json());
+app.use(express.json());
 
-// app.get('/', (req, res) => {
-//     res.send('WPPConnect service is running');
-// });
+app.get('/', (req, res) => {
+    res.send('WPPConnect service is running');
+});
 
-// app.listen(80, () => {
-//     console.log(`Server is listening on port ${80}`);
-// });
+app.listen(80, () => {
+    console.log(`Server is listening on port ${80}`);
+});
 
 import puppeteer from 'puppeteer';
 
