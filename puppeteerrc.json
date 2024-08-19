@@ -1,5 +1,0 @@
-{
-  "cacheDirectory": "./.cache/puppeteer",
-  "defaultProduct": "chrome",
-  "logLevel": "warn"
-}
