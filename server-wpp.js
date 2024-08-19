@@ -86,6 +86,8 @@ function checkSessionExpiration() {
  */
 setInterval(checkSessionExpiration, 60000);
 
+import puppeteer from 'puppeteer'
+
 // just checking
 (async () => {  
   const browser = await puppeteer.launch();

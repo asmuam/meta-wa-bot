@@ -184,6 +184,6 @@ export async function handleGeminiResponse(userMessage) {
     }
   } catch (error) {
     console.error("Error fetching answer:", error);
-    return "Error fetching answer.";
+    return "Maaf, Saat Ini AI Sedang Tidak Tersedia.";
   }
 }

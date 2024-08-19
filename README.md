@@ -33,6 +33,7 @@ Untuk memulai, jalankan perintah berikut:
 
 ```bash
 npm install // install dependensi
+npx puppeteer browsers install chrome // install chrome dan puppeteer
 npm run start // jalankan program
 ```
 
@@ -64,3 +65,4 @@ sesuaikan url post pada [aiHandlers.js](./aiHandlers.js)
 Jika Anda mengalami masalah, Anda dapat membaca dokumentasi berikut untuk bantuan terkait ChromaDB:
 
 - [Masalah terkait ChromaDB](https://github.com/chroma-core/chroma/issues/189#issuecomment-1454418844)
+- [Tidak bisa npm i](./puppeteer.config.cjs) nonaktifkan kode ini
