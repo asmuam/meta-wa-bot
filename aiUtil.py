@@ -2,10 +2,8 @@ import fitz  # pastikan fitz (PyMuPDF) sudah diinstal
 import json
 import os
 import re
-import textwrap
 import chromadb
-import numpy as np
-import pandas as pd
+
 
 from dotenv import load_dotenv
 

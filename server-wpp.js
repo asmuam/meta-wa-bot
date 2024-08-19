@@ -194,8 +194,8 @@ async function start(client) {
                         if (newMenu == MENU_STRUCTURE["1.7"]) {
                             const now = new Date();
                             const startHour = 7;
-                            const endHour = 16;
-                            const endMinute = 0;
+                            const endHour = 15;
+                            const endMinute = 30;
                         
                             const currentHour = now.getHours();
                             const currentMinute = now.getMinutes();
