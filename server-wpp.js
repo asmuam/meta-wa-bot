@@ -108,14 +108,14 @@ wppconnect
         session: BOT_NAME,
         phoneNumber: BOT_NUMBER,
         catchLinkCode: (str) => {
-            console.log('Code: ' + str);
-            console.log('CatchLinkCode callback executed with:', str);
+            console.error('Code: ' + str);
+            console.error('CatchLinkCode callback executed with:', str);
             // Tambahkan lebih banyak kode log jika perlu
         },
         protocolTimeout: 60000,
     })
     .then((client) => {
-        console.log('Client created successfully.');
+        console.error('Client created successfully.');
         start(client);
     })
     .catch((error) => {
