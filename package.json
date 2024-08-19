@@ -25,7 +25,8 @@
     "express": "^4.19.2",
     "natural": "7.1.0",
     "nodemon": "^3.1.4",
-    "raw-body": "^2.5.2"
+    "raw-body": "^2.5.2",
+    "puppeteer": "*"
   },
   "engines": {
     "node": ">=18.0.0"
