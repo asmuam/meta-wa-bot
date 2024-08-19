@@ -45,7 +45,7 @@ Whatsapp Bot Siap Menerima Pesan!
 
 ### server.py
 
-File ini adalah aplikasi Flask yang menangani POST request untuk meminta prompt yang akan dimasukkan ke dalam handler Node.js dengan Gemini AI. Flask memanfaatkan ChromaDB untuk menyimpan data. Data yang digunakan adalah teks yang diparse dari file PDF (tersedia pada folder `pdfs`).
+File ini adalah aplikasi Flask yang menangani POST request untuk meminta prompt yang akan dimasukkan ke dalam handler Node.js dengan Gemini AI. Flask memanfaatkan ChromaDB untuk menyimpan data. Data yang digunakan adalah teks yang diparse dari file PDF (hasil parse tersedia di [parsed_data_v1.json](./parsed_data_v1.json)).
 
 Untuk memulai, jalankan perintah berikut:
 
