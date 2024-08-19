@@ -88,6 +88,8 @@ function checkSessionExpiration() {
  */
 setInterval(checkSessionExpiration, 60000);
 
+const onlineTime = Date.now(); // Current timestamp in milliseconds
+
 import puppeteer from 'puppeteer'
 
 // just checking
@@ -130,6 +132,9 @@ wppconnect
 async function start(client) {
     client.onMessage(async (message) => {
         if (message.isGroupMsg) {
+            return
+        }
+        if (message.timestamp < onlineTime/1000){
             return
         }
         // console.log("client == ", client);
