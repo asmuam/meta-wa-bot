@@ -117,6 +117,20 @@ app.listen(80, () => {
     console.log(`Server is listening on port ${80}`);
 });
 
+import puppeteer from 'puppeteer';
+
+(async () => {
+  const browser = await puppeteer.launch();
+  console.log(`Puppeteer executable path: ${puppeteer.executablePath()}`);
+  await browser.close();
+})();
+
+(async () => {
+  const args = puppeteer.defaultArgs();
+  console.log('Puppeteer default arguments:', args);
+})();
+
+
 wppconnect
     .create({
         session: BOT_NAME,
