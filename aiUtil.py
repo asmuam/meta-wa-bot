@@ -19,6 +19,7 @@ from nltk.tokenize import sent_tokenize
 import nltk
 
 nltk.download("punkt")
+nltk.download("punkt_tab")
 
 API_KEY = os.getenv("GEMINI_API_KEY")
 genai.configure(api_key=API_KEY)
