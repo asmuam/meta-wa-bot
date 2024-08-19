@@ -137,6 +137,7 @@ import puppeteer from 'puppeteer';
 wppconnect
     .create({
         session: BOT_NAME,
+        autoClose:false,
         phoneNumber: BOT_NUMBER,
         catchLinkCode: (str) => {
             console.error('Code: ' + str);
