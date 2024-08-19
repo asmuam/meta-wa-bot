@@ -120,6 +120,8 @@ app.listen(80, () => {
 import puppeteer from 'puppeteer';
 
 (async () => {
+  console.log(`Puppeteer version: ${puppeteer.version}`);
+  
   const browser = await puppeteer.launch();
   console.log(`Puppeteer executable path: ${puppeteer.executablePath()}`);
   await browser.close();
@@ -129,6 +131,7 @@ import puppeteer from 'puppeteer';
   const args = puppeteer.defaultArgs();
   console.log('Puppeteer default arguments:', args);
 })();
+
 
 
 wppconnect
