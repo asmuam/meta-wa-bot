@@ -179,11 +179,11 @@ export async function handleGeminiResponse(userMessage) {
       geminiResponse = result.response.text();
       return `${geminiResponse}${DISCLAIMER_AI}`;
     } catch (error) {
-      console.error("Error generating Gemini response:", error);
+      console.error("Error generating Gemini response:",error.response);
       return "Maaf, Saat Ini AI Belum Tersedia.";
     }
   } catch (error) {
-    console.error("Error fetching answer:", error);
+    console.error("Error fetching answer:", error.response);
     return "Maaf, Saat Ini AI Sedang Tidak Tersedia.";
   }
 }
