@@ -119,6 +119,20 @@ app.listen(80, () => {
 
 import puppeteer from 'puppeteer';
 
+const browser = await puppeteer.launch({
+    headless: true,
+    args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--disable-software-rasterizer',
+        '--disable-features=site-per-process',
+    ],
+    executablePath: puppeteer.executablePath(), // Gunakan path default
+});
+
+
 (async () => {
   console.log(`Puppeteer version: ${puppeteer.version}`);
   
