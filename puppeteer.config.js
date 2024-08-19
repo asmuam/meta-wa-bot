@@ -1,7 +1,7 @@
-// puppeteer.config.js
 import { join } from 'path';
 
 export default {
-  cacheDirectory: join(import.meta.url, '..', '..', '.cache', 'puppeteer'),
-  executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || null,
+  // Ubah ke cache directory yang benar
+  cacheDirectory: join(process.cwd(), '.cache', 'puppeteer'),
+  executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || null, // Atur executable path jika diperlukan
 };
