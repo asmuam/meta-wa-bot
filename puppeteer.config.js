@@ -1,4 +1,4 @@
-// puppeteer.config.mjs
+// puppeteer.config.js
 import { join } from 'path';
 
 export default {
