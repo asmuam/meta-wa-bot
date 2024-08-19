@@ -11,7 +11,9 @@
     "dev:wpp": "nodemon --ignore tokens server-wpp.js",
     "start:python": "python server.py",
     "start:node": "nodemon --ignore tokens server-wpp.js",
-    "dev:wpp-py": "concurrently \"npm run start:python\" \"npm run start:node\""
+    "dev:wpp-py": "concurrently \"npm run start:python\" \"npm run start:node\"",
+    "install:chromium": "npx puppeteer install",
+    "start": "npm run install:chromium && node server-wpp.js"
   },
   "author": "WhatsApp Team",
   "license": "MIT",
