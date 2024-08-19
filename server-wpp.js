@@ -15,7 +15,7 @@
  * along with WPPConnect.  If not, see <https://www.gnu.org/licenses/>.
  */
 import wppconnect from "@wppconnect-team/wppconnect";
-import { MAX_MESSAGES_PER_MINUTE, SPAM_THRESHOLD, HOME_MESSAGE, BACK_ONLINE, WRONG_COMMAND, OPTION_ONE, BACK_TO_MENU, OPTION_TWO, OPTION_FOUR, APP, VALID_OPTIONS, WEBHOOK_VERIFY_TOKEN, GRAPH_API_TOKEN, PORT, SESSION_STATUS, PEGAWAI_NUMBERS, CONNECTED_WITH_PEGAWAI, SESSION_LIMIT, NO_AVAILABLE_PEGAWAI, UNSUPPORTED_TYPE_MESSAGE, SESSION_EXPIRED_MESSAGE, SESSION_QNA_EXPIRED_MESSAGE, BOT_ERROR, BOT_NUMBER, BOT_NAME, MENU_STRUCTURE, NOT_IN_WORKING_HOURS, OPTION_AI, FOOTER } from "./const.js";
+import { MAX_MESSAGES_PER_MINUTE, SPAM_THRESHOLD, HOME_MESSAGE, BACK_ONLINE, WRONG_COMMAND, OPTION_ONE, BACK_TO_MENU, OPTION_TWO, OPTION_FOUR, APP, VALID_OPTIONS, WEBHOOK_VERIFY_TOKEN, GRAPH_API_TOKEN, PORT, SESSION_STATUS, PEGAWAI_NUMBERS, CONNECTED_WITH_PEGAWAI, SESSION_LIMIT, NO_AVAILABLE_PEGAWAI, UNSUPPORTED_TYPE_MESSAGE, SESSION_EXPIRED_MESSAGE, SESSION_QNA_EXPIRED_MESSAGE, BOT_ERROR, BOT_NUMBER, BOT_NAME, MENU_STRUCTURE, NOT_IN_WORKING_HOURS, OPTION_AI, FOOTER, app } from "./const.js";
 import { isPegawaiPhoneNumberInSession } from "./func.js";
 import { handleGeminiResponse } from "./aiHandlers.js";
 import { handlePSTResponse, pegawaiBroadcast, sendMessageToPegawai } from "./pegawaiHandlers.js"
@@ -102,6 +102,20 @@ setInterval(checkSessionExpiration, 60000);
 // });
 
 // console.log('Browser launched successfully.');
+import express from 'express';
+
+
+// Middleware
+// Middleware to parse JSON payloads
+app.use(express.json());
+
+app.get('/', (req, res) => {
+    res.send('WPPConnect service is running');
+});
+
+app.listen(80, () => {
+    console.log(`Server is listening on port ${80}`);
+});
 
 wppconnect
     .create({

@@ -1,6 +1,6 @@
 import express from 'express';
 import 'dotenv/config';
-export const APP = express();
+export const app = express();
 import { config } from 'dotenv';
 config(); // Ini memuat variabel lingkungan dari file .env
 
