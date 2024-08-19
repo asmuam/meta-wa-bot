@@ -92,13 +92,15 @@ const onlineTime = Date.now(); // Current timestamp in milliseconds
 
 import puppeteer from 'puppeteer'
 
+
 // just checking
-(async () => {  
-  const browser = await puppeteer.launch();
-  console.log(`Puppeteer executable path: ${puppeteer.executablePath()}`);
-  const args = puppeteer.defaultArgs();
-  console.log('Puppeteer default arguments:', args);
-  await browser.close();
+(async () => {
+    const browser = await puppeteer.launch({
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
+    }); console.log(`Puppeteer executable path: ${puppeteer.executablePath()}`);
+    const args = puppeteer.defaultArgs();
+    console.log('Puppeteer default arguments:', args);
+    await browser.close();
 })();
 
 
@@ -106,7 +108,7 @@ import puppeteer from 'puppeteer'
 wppconnect
     .create({
         session: BOT_NAME,
-        autoClose:false, // set waktu auto stop kode pairing
+        autoClose: false, // set waktu auto stop kode pairing
         phoneNumber: BOT_NUMBER,
         catchLinkCode: (str) => {
             console.error('Code: ' + str);
@@ -117,7 +119,7 @@ wppconnect
             console.log('Terminal qrcode: ', asciiQR);
             console.log('base64 image string qrcode: ', base64Qrimg);
             console.log('urlCode (data-ref): ', urlCode);
-          },
+        },
         protocolTimeout: 120000, // set waktu timeout dari proses komunikasi
     })
     .then((client) => {
@@ -134,7 +136,7 @@ async function start(client) {
         if (message.isGroupMsg) {
             return
         }
-        if (message.timestamp < onlineTime/1000){
+        if (message.timestamp < onlineTime / 1000) {
             return
         }
         // console.log("client == ", client);
@@ -190,15 +192,15 @@ async function start(client) {
                     businessPhoneNumberId: botPhoneNumber
                 };
                 responseText = MENU_STRUCTURE["0"].message;
-            
-            // main code when in session
-            } else if (optionSession && optionSession != "0") {                
+
+                // main code when in session
+            } else if (optionSession && optionSession != "0") {
                 if (optionSession === "6") {
                     await client.startTyping(userPhoneNumber);
                     responseText = await handleGeminiResponse(userMessage);
                     await client.stopTyping(userPhoneNumber);
                 }
-                if (currentMenu && optionSession!="6") {
+                if (currentMenu && optionSession != "6") {
                     if (currentMenu == MENU_STRUCTURE["1.7"]) {
                         SESSION_STATUS[userPhoneNumber] = {
                             ...SESSION_STATUS[userPhoneNumber],
@@ -218,14 +220,14 @@ async function start(client) {
                             const startHour = 7;
                             const endHour = 15;
                             const endMinute = 30;
-                        
+
                             const currentHour = now.getHours();
                             const currentMinute = now.getMinutes();
-                        
+
                             const isWorkHour = (currentHour > startHour && currentHour < endHour) ||
-                                               (currentHour === startHour && currentMinute >= 0) ||
-                                               (currentHour === endHour && currentMinute <= endMinute);
-                        
+                                (currentHour === startHour && currentMinute >= 0) ||
+                                (currentHour === endHour && currentMinute <= endMinute);
+
                             if (isWorkHour) {
                                 console.log("It's within working hours.");
                                 SESSION_STATUS[userPhoneNumber] = {
@@ -243,7 +245,7 @@ async function start(client) {
                                 return
                                 // Additional logic for outside working hours
                             }
-                        }                        
+                        }
                         // Check if newMenu's message is the same as HOME_MESSAGE + FOOTER
                         responseText = newMenu
                             ? (newMenu.message == (HOME_MESSAGE + FOOTER) ? newMenu.message : (newMenu.message + BACK_TO_MENU))
@@ -252,7 +254,7 @@ async function start(client) {
                         responseText = WRONG_COMMAND + MENU_STRUCTURE[SESSION_STATUS[userPhoneNumber].optionSession].message + BACK_TO_MENU;
                     }
                 }
-            // first valid message
+                // first valid message
             } else if (isValidOption) {
                 SESSION_STATUS[userPhoneNumber].optionSession = userMessage;
                 if (userMessage === "6") {
@@ -283,7 +285,7 @@ async function start(client) {
                     ...SESSION_STATUS[userPhoneNumber],
                     lastActive: Date.now(),
                 };
-            // just send
+                // just send
             } else {
                 await sendWhatsAppMessage(client, userPhoneNumber, responseText);
                 SESSION_STATUS[userPhoneNumber] = {
