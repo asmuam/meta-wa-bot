@@ -95,13 +95,22 @@ setInterval(checkSessionExpiration, 60000);
 
 wppconnect
     .create({
-        session: BOT_NAME, // Pass the name of the client you want to start the bot
+        session: BOT_NAME,
         phoneNumber: BOT_NUMBER,
-        catchLinkCode: (str) => console.log('Code: ' + str),
-        protocolTimeout: 60000, // Set the timeout to 60 seconds or adjust as needed
+        catchLinkCode: (str) => {
+            console.log('Code: ' + str);
+            console.log('CatchLinkCode callback executed with:', str);
+            // Tambahkan lebih banyak kode log jika perlu
+        },
+        protocolTimeout: 60000,
     })
-    .then((client) => start(client))
-    .catch((error) => console.log(error));
+    .then((client) => {
+        console.log('Client created successfully.');
+        start(client);
+    })
+    .catch((error) => {
+        console.error('Error creating client:', error);
+    });
 
 
 async function start(client) {
