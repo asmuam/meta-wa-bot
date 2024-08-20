@@ -82,7 +82,7 @@ function checkSessionExpiration() {
  */
 setInterval(checkSessionExpiration, 60000);
 
-const onlineTime = Date.now(); // Current timestamp in milliseconds
+const serverOnlineTime = Date.now(); // Current timestamp in milliseconds
 
 // create client wpp
 wppconnect
