@@ -14,9 +14,8 @@
     "dev:wpp-py": "concurrently \"npm run start:python\" \"npm run start:node\"",
     "start": "node server-wpp.js",
     "clean": "rm -rf node_modules package-lock.json ~/.cache/puppeteer",
-    "rebuild": "npm run clean && npm install",
-    "heroku-postbuild": "npm i && npx puppeteer install chrome"
-  },
+    "rebuild": "npm run clean && npm install"
+    },
   "author": "WhatsApp Team",
   "license": "MIT",
   "dependencies": {
