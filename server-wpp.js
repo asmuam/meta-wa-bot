@@ -21,6 +21,8 @@ import { pingServer } from "./ping.js";
 
 const PORT = process.env.PORT || 3000;
 
+const myTokenStore = new wppconnect.tokenStore.MemoryTokenStore();
+
 // Tambahkan endpoint root (/) sederhana
 app.get('/', (req, res) => {
   res.send('Server is up and running!');
@@ -100,6 +102,7 @@ const onlineTime = Date.now(); // Current timestamp in milliseconds
 wppconnect
     .create({
         session: BOT_NAME,
+        tokenStore: myTokenStore,
         autoClose: false, // set waktu auto stop kode pairing
         phoneNumber: BOT_NUMBER,
         catchLinkCode: (str) => {
