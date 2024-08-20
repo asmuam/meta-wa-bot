@@ -114,6 +114,7 @@ wppconnect
     })
     .then((client) => {
         // Tambahkan kode yang berhubungan dengan client di sini
+        start(client)
     })
     .catch((error) => {
         console.error('Error:', error);
