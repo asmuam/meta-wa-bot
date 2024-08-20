@@ -92,18 +92,6 @@ const onlineTime = Date.now(); // Current timestamp in milliseconds
 
 import puppeteer from 'puppeteer'
 
-
-// just checking
-(async () => {
-    const browser = await puppeteer.launch({
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
-    }); console.log(`Puppeteer executable path: ${puppeteer.executablePath()}`);
-    const args = puppeteer.defaultArgs();
-    console.log('Puppeteer default arguments:', args);
-    await browser.close();
-})();
-
-
 // create client wpp
 wppconnect
     .create({
@@ -115,14 +103,18 @@ wppconnect
             // Tambahkan lebih banyak kode log jika perlu
         },
         protocolTimeout: 120000, // set waktu timeout dari proses komunikasi
+        puppeteerOptions: {
+            args: ['--no-sandbox', '--disable-setuid-sandbox'],
+            // Tambahkan opsi puppeteer lain di sini jika diperlukan
+        }
     })
     .then((client) => {
-        console.error('Client created successfully.');
-        start(client);
+        // Tambahkan kode yang berhubungan dengan client di sini
     })
     .catch((error) => {
-        console.error('Error creating client:', error);
+        console.error('Error:', error);
     });
+
 
 
 async function start(client) {
