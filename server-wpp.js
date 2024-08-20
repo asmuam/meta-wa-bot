@@ -82,7 +82,7 @@ function checkSessionExpiration() {
  */
 setInterval(checkSessionExpiration, 60000);
 
-const serverOnlineTime = Date.now(); // Current timestamp in milliseconds
+const serverOnlineTime = Date.now()/1000; // Current timestamp in milliseconds
 
 // create client wpp
 wppconnect
@@ -118,7 +118,7 @@ async function start(client) {
         if (message.isGroupMsg) {
             return
         }
-        if (message.timestamp < onlineTime / 1000) {
+        if (message.timestamp < serverOnlineTime) {
             return
         }
         // console.log("client == ", client);
