@@ -19,10 +19,6 @@ import { HOME_MESSAGE, WRONG_COMMAND, BACK_TO_MENU, VALID_OPTIONS, SESSION_STATU
 import { handleGeminiResponse } from "./aiHandlers.js";
 import { pingServer } from "./ping.js";
 
-
-import express from 'express';
-
-const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Tambahkan endpoint root (/) sederhana
