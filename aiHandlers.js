@@ -159,7 +159,7 @@ export async function handleGeminiResponse(userMessage) {
   
   try {
     // change based on python url either local or public url
-    const response = await axios.post('https://bot-wa-eccd27ec94e2.herokuapp.com//get_prompt', {
+    const response = await axios.post('your-py-url/get_prompt', {
       query: userMessage
     }, {
       headers: {
