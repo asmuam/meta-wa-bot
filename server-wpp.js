@@ -117,6 +117,7 @@ wppconnect
     })
     .then((client) => {
         // Tambahkan kode yang berhubungan dengan client di sini
+        console.error('Client Running...');
         start(client)
     })
     .catch((error) => {
@@ -134,7 +135,7 @@ async function start(client) {
             return
         }
         // console.log("client == ", client);
-        // console.log("message == ", message);
+        console.log("message == ", message);
         // console.log("session == ", SESSION_STATUS);
         const userPhoneNumber = message.from;
         const botPhoneNumber = message.to;
