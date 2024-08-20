@@ -103,6 +103,7 @@ wppconnect
     .create({
         session: BOT_NAME,
         tokenStore: myTokenStore,
+        deviceSyncTimeout:0,
         autoClose: false, // set waktu auto stop kode pairing
         phoneNumber: BOT_NUMBER,
         catchLinkCode: (str) => {
