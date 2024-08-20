@@ -15,10 +15,20 @@
  * along with WPPConnect.  If not, see <https://www.gnu.org/licenses/>.
  */
 import wppconnect from "@wppconnect-team/wppconnect";
-import { HOME_MESSAGE, WRONG_COMMAND, BACK_TO_MENU, VALID_OPTIONS, SESSION_STATUS, SESSION_LIMIT, UNSUPPORTED_TYPE_MESSAGE, SESSION_EXPIRED_MESSAGE, SESSION_QNA_EXPIRED_MESSAGE, BOT_ERROR, BOT_NUMBER, BOT_NAME, MENU_STRUCTURE, NOT_IN_WORKING_HOURS, OPTION_AI, FOOTER, app } from "./const.js";
+import { HOME_MESSAGE, WRONG_COMMAND, BACK_TO_MENU, VALID_OPTIONS, SESSION_STATUS, SESSION_LIMIT, UNSUPPORTED_TYPE_MESSAGE, SESSION_EXPIRED_MESSAGE, SESSION_QNA_EXPIRED_MESSAGE, BOT_ERROR, BOT_NUMBER, BOT_NAME, MENU_STRUCTURE, NOT_IN_WORKING_HOURS, OPTION_AI, FOOTER, app, PORT_NODE } from "./const.js";
 import { handleGeminiResponse } from "./aiHandlers.js";
 import { pingServer } from "./ping.js";
 
+
+import express from 'express';
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Tambahkan endpoint root (/) sederhana
+app.get('/', (req, res) => {
+  res.send('Server is up and running!');
+});
 
 // Inisialisasi Online Time
 let serverOnlineTime = 0;
@@ -89,8 +99,6 @@ function checkSessionExpiration() {
 setInterval(checkSessionExpiration, 60000);
 
 const onlineTime = Date.now(); // Current timestamp in milliseconds
-
-import puppeteer from 'puppeteer'
 
 // create client wpp
 wppconnect
@@ -304,3 +312,9 @@ async function markMessageAsSeen(client, messageId) {
     }
 }
 
+// Mulai server
+app.listen(PORT_NODE, () => {
+    console.log(`Server is listening on port ${PORT}`);
+    // Jalankan self-ping pertama setelah server aktif
+    pingServer();
+  });

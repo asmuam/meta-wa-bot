@@ -32,7 +32,7 @@ export const OPTION_FOUR = `Tunggu beberapa saat, kami sedang menghubungi pegawa
 export const NOT_IN_WORKING_HOURS = `Maaf, Admin hanya menjawab di Jam Kerja 08.00--15.30 WIB`
 export const VALID_OPTIONS = Array.from({ length: 6 }, (_, i) => (i + 1).toString());
 
-export const { WEBHOOK_VERIFY_TOKEN, GRAPH_API_TOKEN, PORT, BOT_NUMBER, BOT_NAME, PEGAWAI_NUMBER } = process.env;
+export const { WEBHOOK_VERIFY_TOKEN, GRAPH_API_TOKEN, PORT_NODE, PORT_PY, BOT_NUMBER, BOT_NAME, PEGAWAI_NUMBER } = process.env;
 
 /** OBJEK UNTUK MELACAK STATUS SESI PENGGUNA
  * SESSION_STATUS[USER_PHONE_NUMBER]={CLIENT:CLIENT, LAST_ACTIVE: DATE, OPTION_SESSION: NULL, BUSINESS_PHONE_NUMBER_ID: REQUIRED, PEGAWAI_PHONE_NUMBER: NULL}
