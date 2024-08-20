@@ -15,7 +15,7 @@
     "start": "node server-wpp.js",
     "clean": "rm -rf node_modules package-lock.json ~/.cache/puppeteer",
     "rebuild": "npm run clean && npm install",
-    "heroku-postbuild": "npm i && npx puppeteer install chrome && mkdir ./.cache && mv /app/.cache/puppeteer ./.cache"
+    "heroku-postbuild": "npm i && npx puppeteer install chrome"
   },
   "author": "WhatsApp Team",
   "license": "MIT",
