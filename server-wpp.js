@@ -82,14 +82,14 @@ function checkSessionExpiration() {
  */
 setInterval(checkSessionExpiration, 60000);
 
-const serverOnlineTime = Date.now()/1000; // Current timestamp in milliseconds
+const serverOnlineTime = Date.now() / 1000; // Current timestamp in milliseconds
 
 // create client wpp
 wppconnect
     .create({
         session: BOT_NAME,
         tokenStore: myTokenStore,
-        deviceSyncTimeout:0,
+        deviceSyncTimeout: 0,
         autoClose: false, // set waktu auto stop kode pairing
         phoneNumber: BOT_NUMBER,
         catchLinkCode: (str) => {
@@ -199,17 +199,25 @@ async function start(client) {
                         const newMenu = MENU_STRUCTURE[SESSION_STATUS[userPhoneNumber].optionSession];
                         if (newMenu == MENU_STRUCTURE["1.7"]) {
                             const now = new Date();
+                            const utcHour = now.getUTCHours(); // Jam UTC
+                            const utcMinute = now.getUTCMinutes(); // Menit UTC
+
+                            const gmtOffset = 7; // Offset untuk GMT+7
+                            const currentHour = (utcHour + gmtOffset) % 24; // Sesuaikan dengan GMT+7
+                            const currentMinute = utcMinute;
+
+                            console.log("Current Hour (GMT+7):", currentHour);
+                            console.log("Current Minute (GMT+7):", currentMinute);
+
                             const startHour = 8;
                             const endHour = 15;
                             const endMinute = 30;
-
-                            const currentHour = now.getHours();
-                            const currentMinute = now.getMinutes();
 
                             const isWorkHour =
                                 (currentHour > startHour && currentHour < endHour) || // Jam berada di antara 8:00 dan 15:00
                                 (currentHour === startHour && currentMinute >= 0) || // Tepat pada jam 8:00 atau setelahnya
                                 (currentHour === endHour && currentMinute <= endMinute); // Tepat pada jam 15:00 hingga 15:30
+                            (currentHour === endHour && currentMinute <= endMinute); // Tepat pada jam 15:00 hingga 15:30
 
                             if (isWorkHour) {
                                 console.log("It's within working hours.");
@@ -217,6 +225,7 @@ async function start(client) {
                                     ...SESSION_STATUS[userPhoneNumber],
                                     lastActive: Date.now(),
                                 };
+                                return
                                 // Additional logic for working hours
                             } else {
                                 console.log("It's outside working hours.");
