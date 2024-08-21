@@ -225,7 +225,6 @@ async function start(client) {
                                     ...SESSION_STATUS[userPhoneNumber],
                                     lastActive: Date.now(),
                                 };
-                                return
                                 // Additional logic for working hours
                             } else {
                                 console.log("It's outside working hours.");
