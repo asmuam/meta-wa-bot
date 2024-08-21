@@ -121,6 +121,10 @@ async function start(client) {
         if (message.timestamp < serverOnlineTime) {
             return
         }
+
+        if(message.type ==='e2e_notification'){
+            return
+        }
         // console.log("client == ", client);
         console.log("message == ", message);
         // console.log("session == ", SESSION_STATUS);
