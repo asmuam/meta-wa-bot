@@ -17,6 +17,7 @@ Sebelum memulai, pastikan Anda telah mempersiapkan hal-hal berikut:
 - Node.js
 - Python
 - Kunci API Gemini AI
+- `.env` (sesuaikan)
 
 ## Pengenalan Node.js
 
@@ -37,7 +38,7 @@ npx puppeteer browsers install chrome // install chrome dan puppeteer
 npm run start // jalankan program
 ```
 
-Anda akan melihat QR code atau kode pairing pada terminal. Pindai QR code tersebut atau masukkan kode pairing ke aplikasi WhatsApp untuk melakukan sinkronisasi.
+Anda akan melihat QR code atau kode pairing pada terminal (cek dokumentasi wppconnect untuk menyesuaikan). Pindai QR code tersebut atau masukkan kode pairing ke aplikasi WhatsApp untuk melakukan sinkronisasi.
 
 Pastikan untuk mengubah nomor HP bot pada file `.env`.
 
@@ -59,6 +60,7 @@ python server.py ## menjalankan server
 
 ### AI Handler
 sesuaikan url post pada [aiHandlers.js](./aiHandlers.js)
+sesuaikan GEMINI_API_KEY pada `.env`
 
 ## Masalah
 

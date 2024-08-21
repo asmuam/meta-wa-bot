@@ -25,7 +25,7 @@ const myTokenStore = new wppconnect.tokenStore.MemoryTokenStore();
 
 // Tambahkan endpoint root (/) sederhana
 app.get('/', (req, res) => {
-  res.send('Server is up and running!');
+    res.send('Server is up and running!');
 });
 
 // Inisialisasi Online Time
@@ -134,7 +134,7 @@ async function start(client) {
             return
         }
         // console.log("client == ", client);
-        // console.log("message == ", message);
+        console.log("message == ", message);
         // console.log("session == ", SESSION_STATUS);
         const userPhoneNumber = message.from;
         const botPhoneNumber = message.to;
@@ -211,16 +211,17 @@ async function start(client) {
                         const newMenu = MENU_STRUCTURE[SESSION_STATUS[userPhoneNumber].optionSession];
                         if (newMenu == MENU_STRUCTURE["1.7"]) {
                             const now = new Date();
-                            const startHour = 7;
+                            const startHour = 8;
                             const endHour = 15;
                             const endMinute = 30;
 
                             const currentHour = now.getHours();
                             const currentMinute = now.getMinutes();
 
-                            const isWorkHour = (currentHour > startHour && currentHour < endHour) ||
-                                (currentHour === startHour && currentMinute >= 0) ||
-                                (currentHour === endHour && currentMinute <= endMinute);
+                            const isWorkHour =
+                                (currentHour > startHour && currentHour < endHour) || // Jam berada di antara 8:00 dan 15:00
+                                (currentHour === startHour && currentMinute >= 0) || // Tepat pada jam 8:00 atau setelahnya
+                                (currentHour === endHour && currentMinute <= endMinute); // Tepat pada jam 15:00 hingga 15:30
 
                             if (isWorkHour) {
                                 console.log("It's within working hours.");
@@ -317,4 +318,4 @@ app.listen(PORT_NODE, () => {
     console.log(`Server is listening on port ${PORT}`);
     // Jalankan self-ping pertama setelah server aktif
     pingServer();
-  });
+});
