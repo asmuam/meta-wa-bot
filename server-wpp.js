@@ -17,22 +17,8 @@
 import wppconnect from "@wppconnect-team/wppconnect";
 import { HOME_MESSAGE, WRONG_COMMAND, BACK_TO_MENU, VALID_OPTIONS, SESSION_STATUS, SESSION_LIMIT, UNSUPPORTED_TYPE_MESSAGE, SESSION_EXPIRED_MESSAGE, SESSION_QNA_EXPIRED_MESSAGE, BOT_ERROR, BOT_NUMBER, BOT_NAME, MENU_STRUCTURE, NOT_IN_WORKING_HOURS, OPTION_AI, FOOTER, app, PORT_NODE } from "./const.js";
 import { handleGeminiResponse } from "./aiHandlers.js";
-import { pingServer } from "./ping.js";
-
-const PORT = process.env.PORT || 3000;
 
 const myTokenStore = new wppconnect.tokenStore.MemoryTokenStore();
-
-// Tambahkan endpoint root (/) sederhana
-app.get('/', (req, res) => {
-    res.send('Server is up and running!');
-});
-
-// Inisialisasi Online Time
-let serverOnlineTime = 0;
-
-// Set up an interval to ping the server every 10 minutes (600000 milliseconds)
-setInterval(pingServer, 600000); // 600000 ms = 10 minutes
 
 /**
  * Menangani kedaluwarsa sesi untuk penerima tertentu.
@@ -96,13 +82,14 @@ function checkSessionExpiration() {
  */
 setInterval(checkSessionExpiration, 60000);
 
-const onlineTime = Date.now(); // Current timestamp in milliseconds
+const serverOnlineTime = Date.now()/1000; // Current timestamp in milliseconds
 
 // create client wpp
 wppconnect
     .create({
         session: BOT_NAME,
         tokenStore: myTokenStore,
+        deviceSyncTimeout:0,
         autoClose: false, // set waktu auto stop kode pairing
         phoneNumber: BOT_NUMBER,
         catchLinkCode: (str) => {
@@ -117,6 +104,7 @@ wppconnect
     })
     .then((client) => {
         // Tambahkan kode yang berhubungan dengan client di sini
+        console.error('Client Running...');
         start(client)
     })
     .catch((error) => {
@@ -130,7 +118,7 @@ async function start(client) {
         if (message.isGroupMsg) {
             return
         }
-        if (message.timestamp < onlineTime / 1000) {
+        if (message.timestamp < serverOnlineTime) {
             return
         }
         // console.log("client == ", client);
@@ -312,10 +300,3 @@ async function markMessageAsSeen(client, messageId) {
         console.error(`Failed to mark message ${messageId} as seen:`, error.message);
     }
 }
-
-// Mulai server
-app.listen(PORT_NODE, () => {
-    console.log(`Server is listening on port ${PORT}`);
-    // Jalankan self-ping pertama setelah server aktif
-    pingServer();
-});

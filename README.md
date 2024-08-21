@@ -33,9 +33,9 @@ File ini berisi kode JavaScript yang menggunakan pustaka WPPConnect untuk berkom
 Untuk memulai, jalankan perintah berikut:
 
 ```bash
-npm install // install dependensi
-npx puppeteer browsers install chrome // install chrome dan puppeteer
-npm run start // jalankan program
+npm install ## install dependensi
+npx puppeteer browsers install chrome ## install chrome dan puppeteer
+npm run start ## jalankan program
 ```
 
 Anda akan melihat QR code atau kode pairing pada terminal (cek dokumentasi wppconnect untuk menyesuaikan). Pindai QR code tersebut atau masukkan kode pairing ke aplikasi WhatsApp untuk melakukan sinkronisasi.
@@ -58,13 +58,31 @@ pip install -r requirements.txt ## install dependensi
 python server.py ## menjalankan server
 ```
 
-### AI Handler
+## AI Handler
 sesuaikan url post pada [aiHandlers.js](./aiHandlers.js)
 sesuaikan GEMINI_API_KEY pada `.env`
+
+```javascript
+    const response = await axios.post('your-py-url/get_prompt', {
+      query: userMessage
+    }, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+```
+
+## ChromaDb
+ChromaDB dirancang untuk menyimpan dokumen dan mencari konten yang relevan berdasarkan kueri yang diberikan. Dalam implementasi ini, kita menggunakan ChromaDB untuk menyimpan dokumen dalam bentuk vektor dan mengambil bagian dokumen yang relevan berdasarkan kueri pengguna.
+
+### Implementasi
+Pada [aiUtil.py](./aiUtil.py), kami membuat vectordb dari tiap dokumen dan meng-embednya ke gemini, kemudian ketika terdapat permintaan maka akan mengquery dokumen yang paling relevan, setelah itu dilakukan pencarian kalimat serta kalimat sekitarnya yang paling cocok dengan query dengan TfIdf (hanya untuk meringkas sehingga tidak terkena limit prompt)
+
+Implementasi dengan memotong pdf kebeberapa bagian sehingga tidak memerlukan TfIdf dalam mengambil kalimat relevan sangat disarankan
 
 ## Masalah
 
 Jika Anda mengalami masalah, Anda dapat membaca dokumentasi berikut untuk bantuan terkait ChromaDB:
 
 - [Masalah terkait ChromaDB](https://github.com/chroma-core/chroma/issues/189#issuecomment-1454418844)
-- [Tidak bisa npm i](./puppeteer.config.cjs) nonaktifkan kode ini
+- [Tidak bisa deploy](./puppeteer.config.cjs) nonaktifkan kode ini
