@@ -229,6 +229,9 @@ async function start(client) {
                                     ...SESSION_STATUS[userPhoneNumber],
                                     lastActive: Date.now(),
                                 };
+                                if (userMessage === "99") {
+                                    SESSION_STATUS[userPhoneNumber].optionSession = SESSION_STATUS[userPhoneNumber].optionSession.split('.').slice(0, -1).join('.') || "0";
+                                }
                                 // Additional logic for working hours
                             } else {
                                 console.log("It's outside working hours.");

@@ -262,7 +262,7 @@ function buildMenuFromData(statisticData) {
 
             for (let i = 1; i <= 2; i++) {
                 menu[`1.2.${cat}.${index + 1}.${i}`] = {
-                    message: `Silahkan Kunjungi\n${BASE_URL}${item.value.toLowerCase()}`,
+                    message: `Silahkan Kunjungi\n${BASE_URL}${item.id}}`,
                     options: []
                 };
             }
