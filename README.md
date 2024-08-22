@@ -85,4 +85,4 @@ Implementasi dengan memotong pdf kebeberapa bagian sehingga tidak memerlukan TfI
 Jika Anda mengalami masalah, Anda dapat membaca dokumentasi berikut untuk bantuan terkait ChromaDB:
 
 - [Masalah terkait ChromaDB](https://github.com/chroma-core/chroma/issues/189#issuecomment-1454418844)
-- [Tidak bisa deploy](./puppeteer.config.cjs) nonaktifkan kode ini
+- [Chrome Not Found and failed to run](./puppeteer.config.cjs) nonaktifkan kode ini
