@@ -134,3 +134,6 @@ tokens/
 
 # chromadb
 chroma/
+
+__pycache__/
+*.py[cod]
