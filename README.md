@@ -34,6 +34,7 @@ Untuk memulai, jalankan perintah berikut:
 
 ```bash
 npm install ## install dependensi
+npm audit fix ## opsional jika ada kerentanan
 npx puppeteer browsers install chrome ## install chrome dan puppeteer
 npm run start ## jalankan program
 ```
@@ -50,12 +51,22 @@ File ini adalah aplikasi Flask yang menangani POST request untuk meminta prompt 
 
 Untuk memulai, jalankan perintah berikut:
 
+- Masuk ke direktori `/api`
 - Install dependensi Python: `pip install -r requirements.txt`
 - Jalankan server Flask: `python server.py`
+- Untuk lingkungan produksi gunakan `gunicorn` atau `supervisor`
+
+*Gunicorn tidak secara native didukung di Windows
 
 ```bash
+cd api ## masuk ke direktori api
 pip install -r requirements.txt ## install dependensi
 python server.py ## menjalankan server
+
+## for production run
+gunicorn -w 4 -b 0.0.0.0:5000 app:app
+## or
+supervisord -c /path/to/your/flask_app.conf
 ```
 
 ## AI Handler
@@ -76,7 +87,7 @@ sesuaikan GEMINI_API_KEY pada `.env`
 ChromaDB dirancang untuk menyimpan dokumen dan mencari konten yang relevan berdasarkan kueri yang diberikan. Dalam implementasi ini, kita menggunakan ChromaDB untuk menyimpan dokumen dalam bentuk vektor dan mengambil bagian dokumen yang relevan berdasarkan kueri pengguna.
 
 ### Implementasi
-Pada [aiUtil.py](./aiUtil.py), kami membuat vectordb dari tiap dokumen dan meng-embednya ke gemini, kemudian ketika terdapat permintaan maka akan mengquery dokumen yang paling relevan, setelah itu dilakukan pencarian kalimat serta kalimat sekitarnya yang paling cocok dengan query dengan TfIdf (hanya untuk meringkas sehingga tidak terkena limit prompt)
+Pada [aiUtil.py](./api/aiUtil.py), kami membuat vectordb dari tiap dokumen dan meng-embednya ke gemini, kemudian ketika terdapat permintaan maka akan mengquery dokumen yang paling relevan, setelah itu dilakukan pencarian kalimat serta kalimat sekitarnya yang paling cocok dengan query dengan TfIdf (hanya untuk meringkas sehingga tidak terkena limit prompt)
 
 Implementasi dengan memotong pdf kebeberapa bagian sehingga tidak memerlukan TfIdf dalam mengambil kalimat relevan sangat disarankan
 

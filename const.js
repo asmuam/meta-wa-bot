@@ -61,7 +61,9 @@ export const BOT_ERROR = `Maaf, bot sedang bermasalah. Kami sedang berupaya seba
 export const DISCLAIMER_AI =
 `
 *Disclaimer*: Jawaban ini dihasilkan oleh AI Gemini sehingga terdapat kemungkinan untuk salah.
+
 SIlahkan Kirim Kritik dan Saran untuk pengembangan Asisten Digital yang lebih baik
+
 Kunjungi https://boyolalikab.bps.go.id/ untuk mencari informasi yang lebih tepat`
 
 const JENIS_STATISTIK =

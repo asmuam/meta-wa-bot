@@ -1,7 +1,6 @@
 from flask import Flask, request, jsonify
 import os
-from aiUtil import create_chroma_db_from_json, get_relevant_passage, make_prompt, genai
-
+from aiUtil import create_chroma_db_from_json, get_relevant_passage, make_prompt
 from dotenv import load_dotenv
 load_dotenv() 
 
@@ -35,5 +34,5 @@ def get_answer():
 if __name__ == "__main__":
     host = '0.0.0.0'
     port =os.getenv('PORT_PY')
-    app.run(host=host,debug=True)
+    app.run(host=host,port=port,debug=True) ## set to false for production
     print("Python Server Runnig on Port : ", port)

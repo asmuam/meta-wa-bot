@@ -1,7 +1,9 @@
 // gemini.js
-import { GoogleGenerativeAI, HarmBlockThreshold, HarmCategory } from "@google/generative-ai";
-// import fs from 'fs';
-// import natural from 'natural';
+import {
+  GoogleGenerativeAI,
+  HarmBlockThreshold,
+  HarmCategory,
+} from "@google/generative-ai";
 import { BACK_TO_MENU, DISCLAIMER_AI } from "./const.js";
 
 import axios from "axios";
@@ -75,7 +77,6 @@ import axios from "axios";
 // // Load JSON data from file
 // const data = JSON.parse(fs.readFileSync('./parsed_data_v1.json', 'utf8'));
 
-
 // // Function to handle Gemini response
 // export async function handleGeminiResponse(userPrompt) {
 //   const { GEMINI_API_KEY } = process.env;
@@ -97,18 +98,17 @@ import axios from "axios";
 //     ],
 //   });
 
-
 //   const passage = processDocuments(data, userPrompt);
 
 //   // Create a prompt
 //   const prompt = `Anda adalah seorang perwakilan yang berpengetahuan dan membantu dari Badan Pusat Statistik (BPS)
-//   Kabupaten Boyolali yang memberikan data dan informasi kepada pengguna terutama terkait statistik khususnya statistik 
-//   Boyolali. Tujuan Anda adalah untuk menjawab pertanyaan menggunakan data yang kamu miliki di bawah ini. INGAT! Data di bawah merupakan data yang kamu miliki bukan data yang saya berikan ke kamu. 
-//   Pastikan jawaban Anda komprehensif, mudah dipahami, dan menghindari jargon teknis sebisa mungkin. 
-//   Gunakan nada yang ramah dan pecahkan konsep-konsep yang kompleks menjadi informasi yang 
-//   sederhana dan mudah dicerna. Gunakan referensi data yang kamu miliki sebagai alat bantu selain pengetahuanmu sendiri!. 
-//   Jika data yang kamu miliki di bawah tidak mengandung informasi yang relevan untuk jawaban, Anda boleh mengabaikannya dan menjawab sesuai pengetahuanmu. 
-//   Sebisa mungkin format jawaban sebagai berikut 1. salam pembuka singkat 2. sumber data (asal datanya, judulnya saja!) jika merupakan 
+//   Kabupaten Boyolali yang memberikan data dan informasi kepada pengguna terutama terkait statistik khususnya statistik
+//   Boyolali. Tujuan Anda adalah untuk menjawab pertanyaan menggunakan data yang kamu miliki di bawah ini. INGAT! Data di bawah merupakan data yang kamu miliki bukan data yang saya berikan ke kamu.
+//   Pastikan jawaban Anda komprehensif, mudah dipahami, dan menghindari jargon teknis sebisa mungkin.
+//   Gunakan nada yang ramah dan pecahkan konsep-konsep yang kompleks menjadi informasi yang
+//   sederhana dan mudah dicerna. Gunakan referensi data yang kamu miliki sebagai alat bantu selain pengetahuanmu sendiri!.
+//   Jika data yang kamu miliki di bawah tidak mengandung informasi yang relevan untuk jawaban, Anda boleh mengabaikannya dan menjawab sesuai pengetahuanmu.
+//   Sebisa mungkin format jawaban sebagai berikut 1. salam pembuka singkat 2. sumber data (asal datanya, judulnya saja!) jika merupakan
 //   angka/metode/hasil analisis atau yang terkait dengan hasil statistik, jika bukan maka cukup jawab langsung saja. Jangan bilang bahwa data tambahan ini dari saya, ini adalah data kamu!.
 //   Berikut pertanyaan dan referensi bantuan yang mungkin dibutuhkan.\n\nPERTANYAAN: '${userPrompt}'\n\nDATA TAMBAHAN: '${passage}'\n\nJAWABAN:`;
 
@@ -124,8 +124,13 @@ import axios from "axios";
 //   }
 // }
 
-
 export async function handleGeminiResponse(userMessage) {
+  const TIMEOUT_DURATION = 60000; // Batas waktu dalam milidetik (contoh: 60 detik)
+
+  const timeoutPromise = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error("Request timed out")), TIMEOUT_DURATION)
+  );
+
   const { GEMINI_API_KEY } = process.env;
   if (!GEMINI_API_KEY) {
     console.error("GEMINI_API_KEY is not set.");
@@ -153,19 +158,23 @@ export async function handleGeminiResponse(userMessage) {
       {
         category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
         threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_HIGH,
-      }
+      },
     ],
   });
-  
+
   try {
     // change based on python url either local or public url
-    const response = await axios.post('your-py-url/get_prompt', {
-      query: userMessage
-    }, {
-      headers: {
-        'Content-Type': 'application/json'
+    const response = await axios.post(
+      "'your-py-url/get_prompt'",
+      {
+        query: userMessage,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
       }
-    });
+    );
 
     // Ambil data dari response
     const data = response.data;
@@ -175,11 +184,18 @@ export async function handleGeminiResponse(userMessage) {
     let geminiResponse = "";
 
     try {
-      const result = await model.generateContent(data.prompt);
+      const result = await Promise.race([
+        model.generateContent(data.prompt),
+        timeoutPromise,
+      ]);
       geminiResponse = result.response.text();
       return `${geminiResponse}${DISCLAIMER_AI}`;
     } catch (error) {
-      console.error("Error generating Gemini response:",error.response);
+      if (error.message === "Request timed out") {
+        console.error("Error: Request timed out");
+        return "Maaf, AI sedang sibuk.";
+      }
+      console.error("Error generating Gemini response:", error.response);
       return "Maaf, Saat Ini AI Belum Tersedia.";
     }
   } catch (error) {

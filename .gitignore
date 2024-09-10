@@ -133,7 +133,13 @@ dist
 tokens/
 
 # chromadb
-chroma/
+api/chromaDB/
 
-__pycache__/
-*.py[cod]
+# api
+api/__pycache__/
+api/*.py[cod]
+api/log
+# puppeteer
+.cache/puppeteer/
+
+api/flask_app.conf

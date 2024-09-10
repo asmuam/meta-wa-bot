@@ -4,3 +4,4 @@ chromadb
 scikit-learn
 nltk
 flask
+gunicorn
